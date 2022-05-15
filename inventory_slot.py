@@ -11,7 +11,7 @@ class InventorySlot:
         self.quantity = 0
         self.selected = False
 
-        self.quantity_img = quantity_font.render(str(self.quantity),False,"black")
+        self.quantity_img = quantity_font.render(str(self.quantity),True,"black")
 
     def draw_item(self,x,y,offset):
         if not self.empty:
@@ -21,7 +21,7 @@ class InventorySlot:
                 draw_image(self.quantity_img,(x+offset-offset/4,y+offset-offset/2))
 
     def refresh_quantity_img(self):
-        self.quantity_img = quantity_font.render(str(self.quantity),False,"black")
+        self.quantity_img = quantity_font.render(str(self.quantity),True,"black")
 
     def refresh_durability(self):
         pass

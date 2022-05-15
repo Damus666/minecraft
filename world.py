@@ -4,7 +4,7 @@ from item import ItemInstance
 from player import Player
 import pygame
 from asset_loader import return_assets
-from settings import BLOCK_SIZE, CHUNK_SIZE, ENTITIES, GRAPHICS_PATH, HEIGHT, WIDTH, FILE_NAMES,W_DATA_F
+from settings import BLOCK_SIZE, CHUNK_SIZE, ENTITIES, GRAPHICS_PATH, HEIGHT, WIDTH, FILE_NAMES,W_DATA_F,DAY_DURATION,NIGHT_DURATION,TRANSITION_DUR
 from noise import pnoise1
 from data import block_ids,blocks_data, frames, tools_data,items_data, entities_data
 from random import randint
@@ -15,7 +15,6 @@ from build_system import BuildSystem
 from pygame_helper.helper_graphics import draw_image, load_image,scale_image
 from custom_button import CustomButton
 import psutil,os,time, json
-from entity import Entity
 from entities import PorcupineEntity
 
 class World:
@@ -27,14 +26,19 @@ class World:
         self.id = id
         self.can_press = True
 
+        self.x_range = int(WIDTH/(BLOCK_SIZE*CHUNK_SIZE))+2
+        self.y_range = int(HEIGHT/(BLOCK_SIZE*CHUNK_SIZE))+3
+
         self.scroll = pygame.Vector2((0,0))
 
         self.assets = return_assets()
 
         self.f3_font = pygame.font.Font("assets/fonts/regular.ttf",30)
         self.f3_offset = 35
-        self.f3_spacing = 8
+        self.f3_spacing = 10
         self.is_f3 = False
+        ex = self.f3_font.render("CAPS",True,"white")
+        self.f3_height = ex.get_height()
 
         self.bg_img_0 = load_image("assets/graphics/world_bg/0.png")
         self.bg_img_1 = load_image("assets/graphics/world_bg/1.png")
@@ -46,11 +50,11 @@ class World:
         self.red_tint.set_alpha(50)
         self.death_font = pygame.font.Font("assets/fonts/regular.ttf",60)
         self.button_font = pygame.font.Font("assets/fonts/regular.ttf",30)
-        self.death_img = self.death_font.render("You Died!",False,"white")
-        self.death_img_2 = self.death_font.render("You Died!",False,(60,60,60))
+        self.death_img = self.death_font.render("You Died!",True,"white")
+        self.death_img_2 = self.death_font.render("You Died!",True,(60,60,60))
         self.death_rect = self.death_img.get_rect(midbottom = (WIDTH//2,HEIGHT//2-self.death_img.get_height()))
-        self.pause_img = self.button_font.render("Pause",False,(220,220,220))
-        self.pause_img_2 = self.button_font.render("Pause",False,(60,60,60))
+        self.pause_img = self.button_font.render("Pause",True,(220,220,220))
+        self.pause_img_2 = self.button_font.render("Pause",True,(60,60,60))
         self.pause_rect = self.pause_img.get_rect(midbottom = (WIDTH//2,HEIGHT//2-self.pause_img.get_height()))
         self.respawn_button = CustomButton((0,0),(WIDTH//2,HEIGHT//2+50),f"{GRAPHICS_PATH}gui/buttons/empty_button.png",2.5,self.button_font,"Respawn")
         self.resume_button = CustomButton((0,0),(WIDTH//2,HEIGHT//2+50),f"{GRAPHICS_PATH}gui/buttons/empty_button.png",2.5,self.button_font,"Resume")
@@ -93,9 +97,74 @@ class World:
 
         self.process = os.getpid()
         self.python = psutil.Process(self.process)
-        self.load_data()
 
         self.loaded_entities = 0
+
+        self.sun_img = scale_image(load_image(f"{GRAPHICS_PATH}other/sun.png"),0.8)
+        self.moon_img = scale_image(load_image(f"{GRAPHICS_PATH}other/moon.png"),0.8)
+        self.celestial_height = 200
+        self.celestial_default_left = -100
+        self.sun_x_pos = self.celestial_default_left
+        self.moon_x_pos = self.celestial_default_left
+        self.is_day = True
+        self.sun_speed = WIDTH/DAY_DURATION
+        self.moon_speed = WIDTH/NIGHT_DURATION
+        self.night_tint = pygame.Surface((WIDTH,HEIGHT))
+        self.night_tint.fill("blue")
+        self.night_tint.set_alpha(0)
+        self.max_night_alpha = 150
+        self.alpha_multiplier = 1
+        self.last_milli = 0
+        self.alpha = 0
+        self.is_in_transition = False
+        self.transition_speed = self.max_night_alpha/TRANSITION_DUR
+
+        self.range_x = int(WIDTH/self.bg_sizes[0])+1
+        self.range_y = (int(HEIGHT/self.bg_sizes[1])+1)-3
+
+        self.keys = ["Keys:","Walk: 'A' & 'D'","Jump: 'SPACE'","Pause: 'ESC'","This Menu: 'F3'","Destroy/Attack: 'MOUSE_LEFT'","Place: 'MOUSE_RIGHT'","Item Interaction: 'R'","Open Inventory: 'E'"]
+
+        self.load_data()
+
+    def draw_day_night(self):
+        if self.night_tint.get_alpha() > 0:
+            draw_image(self.night_tint,(0,0))
+
+        if self.is_day:
+            draw_image(self.sun_img,(self.sun_x_pos,self.celestial_height))
+        else:
+            draw_image(self.moon_img,(self.moon_x_pos,self.celestial_height))
+
+    def transition(self):
+        self.alpha += self.alpha_multiplier*self.transition_speed*(pygame.time.get_ticks()-self.last_milli)
+        if self.alpha <= 0:
+            self.alpha = 0
+            self.is_in_transition = False
+        if self.alpha >= self.max_night_alpha:
+            self.alpha = self.max_night_alpha
+            self.is_in_transition = False
+        self.night_tint.set_alpha(self.alpha)
+
+    def update_day_night(self,dt):
+        if self.is_in_transition:
+            self.transition()
+
+        if self.is_day:
+            self.sun_x_pos+= self.sun_speed*dt*(pygame.time.get_ticks()-self.last_milli)
+            if self.sun_x_pos > WIDTH+50:
+                self.is_day = False
+                self.sun_x_pos = self.celestial_default_left
+                self.alpha_multiplier = 1
+                self.is_in_transition = True
+        else:
+            self.moon_x_pos += self.moon_speed*dt*(pygame.time.get_ticks()-self.last_milli)
+            if self.moon_x_pos > WIDTH+50:
+                self.is_day = True
+                self.moon_x_pos = self.celestial_default_left
+                self.alpha_multiplier = -1
+                self.is_in_transition = True
+
+        self.last_milli = pygame.time.get_ticks()
 
     def delete_entity(self,e):
         self.entities.remove(e)
@@ -132,6 +201,11 @@ class World:
                 self.structure_b_id = other["structure_b_id"]
                 self.player_block_id = other["player_b_id"]
                 self.seconds = other["seconds"]
+                self.is_day = other["is_day"]
+                self.sun_x_pos = other["sun_x"]
+                self.moon_x_pos = other["moon_x"]
+                self.alpha = other["alpha"]
+                self.is_in_transition = other["in_trans"]
             self.player.load_data(self.id)
         except:
             self.save_data()
@@ -154,7 +228,7 @@ class World:
             with open(name+FILE_NAMES["entity"],"w") as e_file:
                 json.dump(entity_dict,e_file)
 
-            other_dict = {"scroll":[self.scroll.x,self.scroll.y],"structure_b_id":self.structure_b_id,"player_b_id":self.player_block_id,"seconds":self.seconds}
+            other_dict = {"scroll":[self.scroll.x,self.scroll.y],"structure_b_id":self.structure_b_id,"player_b_id":self.player_block_id,"seconds":self.seconds,"is_day":self.is_day,"sun_x":self.sun_x_pos,"moon_x":self.moon_x_pos,"in_trans":self.is_in_transition,"alpha":self.alpha}
             with open(name+FILE_NAMES["other"],"w") as o_file:
                 json.dump(other_dict,o_file)
             self.player.save_data(self.id)
@@ -199,13 +273,16 @@ class World:
         for index,info in enumerate(self.extra_infos.keys()):
             self.draw_info(WIDTH-500,index,self.extra_infos[info])
 
+        for index, info in enumerate(self.keys):
+            self.draw_info(0,index+10,info)
+
     def draw_info(self,x,y_order,text):
-        img = self.f3_font.render(str(text),False,"white")
+        img = self.f3_font.render(str(text),True,"white")
         bg = pygame.Surface((img.get_width()+2.5,img.get_height()+2.5))
         bg.fill((60,60,60))
         bg.set_alpha(100)
-        draw_image(bg,(x+self.f3_offset-1.25,self.f3_offset+img.get_height()*y_order+self.f3_spacing*y_order-1.25))
-        draw_image(img,(x+self.f3_offset,self.f3_offset+img.get_height()*y_order+self.f3_spacing*y_order))
+        draw_image(bg,(x+self.f3_offset-1.25,self.f3_offset+self.f3_height*y_order+self.f3_spacing*y_order-1.25))
+        draw_image(img,(x+self.f3_offset,self.f3_offset+self.f3_height*y_order+self.f3_spacing*y_order))
 
     def trigger_death(self):
         self.is_dead = True
@@ -357,8 +434,8 @@ class World:
                     self.free_pos_rects.remove([rect,block["pos"]]) 
 
     def render_chunks(self):
-        for y in range(4):
-            for x in range(5):
+        for y in range(self.y_range):
+            for x in range(self.x_range):
                 target_x = x - 1 + int(round(self.scroll.x/(CHUNK_SIZE*BLOCK_SIZE)))
                 target_y = y - 1 + int(round(self.scroll.y/(CHUNK_SIZE*BLOCK_SIZE)))
                 target_chunk = str(target_x)+";"+str(target_y)
@@ -432,14 +509,17 @@ class World:
             self.exit()
 
     def draw_bg(self):
-        for i in range(4):
+        for i in range(self.range_x):
             draw_image(self.bg_img_2,(i*self.bg_sizes[0],0-self.bg_sizes[1]/2.5))
             draw_image(self.bg_img_1,(i*self.bg_sizes[0],self.bg_sizes[1]-self.bg_sizes[1]/2.5))
             draw_image(self.bg_img_0,(i*self.bg_sizes[0],self.bg_sizes[1]*2-self.bg_sizes[1]/2.5))
+            if self.range_y > 0:
+                for o in range(self.range_y):
+                    draw_image(self.bg_img_0,(i*self.bg_sizes[0],self.bg_sizes[1]*(o+2)-self.bg_sizes[1]/2.5))
 
     def draw(self):
         self.draw_bg()
-
+        self.draw_day_night()
         # player
             
         self.render_chunks()
@@ -477,11 +557,14 @@ class World:
         if not self.is_dead:
             self.input()
             if not self.is_paused:
+                self.update_day_night(dt)
                 # mining
                 if not self.player.inventory_open:
                     self.mining_system.update(mouse)
                     self.build_system.update(mouse)
                     self.combat_system.update(mouse)
+            else:
+                self.last_milli = pygame.time.get_ticks()
             
         # player
         self.player.update(self.rect_colliders,dt,mouse)

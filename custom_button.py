@@ -7,9 +7,9 @@ class CustomButton(ImageButton):
 
         if pos_center:
             self.rect.center = pos_center
-        self.text_img = font.render(text,False,color)
+        self.text_img = font.render(text,True,color)
         self.text_rect = self.text_img.get_rect(center=self.rect.center)
-        self.txt_img_2 = font.render(text,False,(60,60,60))
+        self.txt_img_2 = font.render(text,True,(60,60,60))
 
     def draw_check(self):
         action = ImageButton.draw(self)

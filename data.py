@@ -20,31 +20,38 @@ block_ids = {
 blocks_data = {
     block_ids["dirt"]:          {"name":"dirt_block",
                                 "tool_required":tool_types["shovel"],
-                                "mine_cooldown":0.72*1000},
+                                "mine_cooldown":0.72*1000,
+                                "max_cooldown":1.5,},
 
     block_ids["grassblock"]:    {"name":"grass_block",
                                 "tool_required":tool_types["shovel"],
-                                "mine_cooldown":0.72*1000},
+                                "mine_cooldown":0.72*1000,
+                                "max_cooldown":1.5,},
 
     block_ids["stone"]:         {"name":"stone_block",
                                 "tool_required":tool_types["picaxe"],
-                                "mine_cooldown":1.2*1000},
+                                "mine_cooldown":1.2*1000,
+                                "max_cooldown":8,},
     
     block_ids["grimstone"]:     {"name":"grimstone_block",
                                 "tool_required":tool_types["picaxe"],
-                                "mine_cooldown":1.82*1000},
+                                "mine_cooldown":1.82*1000,
+                                "max_cooldown":8,},
 
     block_ids["bedrock"]:       {"name":"bedrock",
                                 "tool_required":tool_types["thepowerofgod"],
-                                "mine_cooldown":999*1000},
+                                "mine_cooldown":999*1000,
+                                "max_cooldown":999,},
 
     block_ids["log"]:           {"name":"log_block",
                                 "tool_required":tool_types["axe"],
-                                "mine_cooldown":1.1*1000},
+                                "mine_cooldown":1.05*1000,
+                                "max_cooldown":1.5,},
 
     block_ids["leaves"]:        {"name":"leaves_block",
                                 "tool_required":tool_types["axe"],
-                                "mine_cooldown":0.4*1000},
+                                "mine_cooldown":0.4*1000,
+                                "max_cooldown":1,},
 }
 
 frames = {

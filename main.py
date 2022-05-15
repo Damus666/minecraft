@@ -46,6 +46,7 @@ class Game:
             self.worlds.append(world)
         self.world = self.worlds[self.world_index]
         self.in_game = True
+        self.world.last_milli = pygame.time.get_ticks()
 
     def exit_world(self):
         self.in_game = False
