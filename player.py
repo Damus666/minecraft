@@ -1,17 +1,15 @@
 import pygame, json
 from pygame.transform import flip, rotate
-from pygame_helper.helper_sprites import AnimatedSprite
 from pygame_helper.helper_graphics import load_image, scale_image, draw_image
 from settings import BLOCK_SIZE, GRAPHICS_PATH, GRAVITY_CONSTANT, HEIGHT, ITEM_SIZE, SCROLL_LINE_X, SCROLL_LINE_Y, WIDTH, SAFE_BLOCKS_NUM,WALK_COOLDOWN
 from inventory import Inventory
 from hotbar import Hotbar
-from pygame_helper.pygame_helper import debug
 from item import ItemInstance
 from stats import Statistics
+from data import items_data
 
-class Player(AnimatedSprite):
+class Player():
     def __init__(self,start_pos,scrollx,scrolly, assets, add_drop,trigger_death, id):
-        AnimatedSprite.__init__(self)
 
         self.height = BLOCK_SIZE*2 * 0.9
         self.width = BLOCK_SIZE/2
@@ -19,11 +17,6 @@ class Player(AnimatedSprite):
         self.scroll_y = scrolly
         self.is_dead = False
 
-        #self.right_image = load_image(GRAPHICS_PATH+"player/stand/stand_right.png",True)
-        #self.right_image = scale_image(self.right_image,None,self.width,self.height)
-        #self.left_image = flip(self.right_image,True,False)
-        #self.image = self.right_image
-        #self.rect = self.image.get_rect(midbottom=start_pos)
         scale = 0.8
         self.head_img_l = scale_image(load_image(f"{GRAPHICS_PATH}player/male/head.png"),scale) 
         self.head_img_r = flip(self.head_img_l,True,False)
@@ -111,8 +104,10 @@ class Player(AnimatedSprite):
             self.hotbar.selection_index = data["index"]
             if self.hotbar.get_selected().empty == False:
                 self.selected_item = self.hotbar.get_selected().item.__copy__()
+                
             self.flip_image(False)
             if self.selected_item:
+                self.selected_item.image = rotate(self.selected_item.image,-45)
                 if self.direction == -1:
                     self.selected_item.image = pygame.transform.flip(self.selected_item.image,True,False)
             p_file.close()
@@ -139,14 +134,15 @@ class Player(AnimatedSprite):
     def change_selected_item(self,item):
         self.selected_item = item
         if self.selected_item:
+            self.selected_item.image = rotate(self.selected_item.image,-45)
             if self.direction == -1:
                 self.selected_item.image = pygame.transform.flip(self.selected_item.image,True,False)
 
     def give_starter_items(self):
-        self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(0,"tools",False),1)
-        self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(1,"tools",False),1)
-        self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(2,"tools",False),1)
-        self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(3,"tools",False),1)
+        self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(0,"tools",False,0,200),1)
+        self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(1,"tools",False,0,200),1)
+        self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(2,"tools",False,0,200),1)
+        self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(3,"tools",False,0,200),1)
     
     def walk_animation(self):
         if self.is_moving:
@@ -312,11 +308,15 @@ class Player(AnimatedSprite):
                     self.is_moving = False
                     self.stop_player()
 
+        if keys[pygame.K_r] and self.can_press:
+            self.can_press = False
+            self.interact()
+
         if keys[pygame.K_q] and self.can_press:
             self.can_press = False
             self.drop_item()
 
-        if not keys[pygame.K_q]:
+        if not keys[pygame.K_q] and not keys[pygame.K_r]:
             self.can_press = True
 
         if (not keys[pygame.K_a]) and (not keys[pygame.K_d]):
@@ -429,18 +429,37 @@ class Player(AnimatedSprite):
         self.gravity-=self.jump_speed
         self.can_jump = False
 
+    def interact(self):
+        if self.hotbar.get_selected().empty == False:
+            sel_item = self.hotbar.get_selected().item
+            slot = self.hotbar.get_selected()
+            if sel_item.type == "items":
+                if items_data[sel_item.id]["type"] == "food":
+                    if self.statistics.player_hunger < self.statistics.max_hunger:
+                        v = items_data[sel_item.id]["hunger"]
+                        self.statistics.fill_hunger(v)
+                        if slot.quantity == 1:
+                            slot.empty = True
+                            slot.item = None
+                            self.change_selected_item(None)
+                        else:
+                            slot.quantity -= 1
+                            self.change_selected_item(sel_item.__copy__())
+                        slot.refresh_quantity_img()
+
     def draw_selected_item(self):
         if self.selected_item:
+            
             if self.direction == 1:
                 if self.arm_direction.x == 1:
-                    self.sel_item_rect.bottomleft = (self.right_arm_rect.right-5,self.right_arm_rect.bottom-5)
+                    self.sel_item_rect.bottomleft = (self.right_arm_rect.right-15,self.right_arm_rect.bottom-2)
                 else:
-                    self.sel_item_rect.bottomleft = (self.right_arm_rect.left+5,self.right_arm_rect.bottom-5)
+                    self.sel_item_rect.bottomleft = (self.right_arm_rect.left+15,self.right_arm_rect.bottom-2)
             else:
                 if self.arm_direction.x == -1:
-                    self.sel_item_rect.bottomright = (self.right_arm_rect.left+5,self.right_arm_rect.bottom-5)
+                    self.sel_item_rect.bottomright = (self.right_arm_rect.left+15,self.right_arm_rect.bottom-2)
                 else:
-                    self.sel_item_rect.bottomright = (self.right_arm_rect.right-5,self.right_arm_rect.bottom-5)
+                    self.sel_item_rect.bottomright = (self.right_arm_rect.right-15,self.right_arm_rect.bottom-2)
             draw_image(self.selected_item.image,self.sel_item_rect)
 
     def update(self,obstacles,dt,mouse):

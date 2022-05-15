@@ -6,7 +6,7 @@ from data import blocks_data, block_ids, tool_types
 from random import randint, choice
 
 class MiningSystem:
-    def __init__(self, get_block_rects,get_chunk_rects, get_world_data, edit_chunk_data, get_scroll, get_structures, edit_structures, get_player_pos, get_selected,add_drop, get_player_blocks,remove_player_block,get_player_hunger):
+    def __init__(self, get_block_rects,get_chunk_rects, get_world_data, edit_chunk_data, get_scroll, get_structures, edit_structures, get_player_pos, get_selected,add_drop, get_player_blocks,remove_player_block,get_player_hunger,c_s_i):
         
         
         self.first_time_press = True
@@ -32,6 +32,7 @@ class MiningSystem:
         self.get_player_blocks = get_player_blocks
         self.remove_player_block = remove_player_block
         self.get_player_hunger = get_player_hunger
+        self.c_s_i = c_s_i
 
         self.destroy_images = import_images_folder(f"{GRAPHICS_PATH}blocks/destroy_animation",True,None,(BLOCK_SIZE,BLOCK_SIZE))
         self.destroy_image = self.destroy_images[0]
@@ -189,6 +190,15 @@ class MiningSystem:
                                 self.remove_b_structure()
                             else:
                                 self.remove_p_block()
+                        if self.get_selected().empty == False:
+                            if self.get_selected().item.type == "tools":
+                                self.get_selected().item.durability -= 1
+                                if self.get_selected().item.durability <= 0:
+                                    self.get_selected().empty = True
+                                    self.get_selected().item = None
+                                    self.c_s_i(None)
+                                else:
+                                    self.get_selected().refresh_durability()
 
             if self.first_time_press != False:
                 self.first_time_press = False

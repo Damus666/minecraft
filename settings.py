@@ -4,8 +4,8 @@ screensize = user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
 
 WIDTH = screensize[0]
 HEIGHT = screensize[1]
-WIDTH = 1200
-HEIGHT = 800
+#WIDTH = 1200
+#HEIGHT = 800
 FPS = 60
 
 BLOCK_SIZE = 80
@@ -27,6 +27,7 @@ INV_BG_COLOR = (212,211,211)
 
 PLAYER_MINE_RANGE = BLOCK_SIZE*8
 PLAYER_BUILD_RANGE = BLOCK_SIZE*5
+PLAYER_HIT_RANGE = BLOCK_SIZE*3
 
 MAX_HEALTH = 20
 MAX_HUNGER = 20
@@ -40,3 +41,8 @@ BG_CHANGE_COOLDOWN = 20*1000
 
 FILE_NAMES = {"chunk":"chunks_data.json","structure":"structures_data.json","block":"player_blocks_data.json","drop":"drops_data.json","other":"world_data.json"}
 
+ENTITY_DIR_COOLDOWN = 10*1000
+
+BLOCK_DAMAGE = 1
+
+ENTITIES = ["porcupine"]

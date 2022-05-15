@@ -41,7 +41,7 @@ class BuildSystem:
                 self.can_click = False
                 if self.get_free_pos_rect(pos):
                     if self.get_selected().empty == False:
-                        if self.get_selected().item.id < 60:
+                        if self.get_selected().item.type == "blocks":
                             self.update_current_unique()
                             item = self.get_selected().item
                             self.add_block({"pos":self.block[1],"id":item.id,"collider":True,"frame":0,"unique":self.get_current_unique()})

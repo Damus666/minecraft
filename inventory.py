@@ -17,7 +17,6 @@ class Inventory:
         
 
         self.slot_image = pygame.Surface((ITEM_SIZE+SLOT_OFFSET,ITEM_SIZE+SLOT_OFFSET))
-        #self.slot_image.fill(SLOT_COLOR)
         self.slot_image.fill((30,30,30))
         self.slot_image.set_alpha(100)
 
@@ -50,7 +49,7 @@ class Inventory:
                     if slot.empty:
                         data[s] = {"empty":slot.empty,"item":False,"quantity":slot.quantity,"sel":slot.selected,}
                     else:
-                        data[s] = {"empty":slot.empty,"item":{"id":slot.item.id,"type":slot.item.type,"is_stackable":slot.item.is_stackable,"level":slot.item.level},"quantity":slot.quantity,"sel":slot.selected}
+                        data[s] = {"empty":slot.empty,"item":{"id":slot.item.id,"type":slot.item.type,"is_stackable":slot.item.is_stackable,"level":slot.item.level,"durability":slot.item.durability},"quantity":slot.quantity,"sel":slot.selected}
                 json.dump(data,i_file)
 
         except:
@@ -68,7 +67,7 @@ class Inventory:
                         self.slots[s].quantity = slot["quantity"]
                     else:
                         self.slots[s].empty = False
-                        self.slots[s].item = ItemInstance(slot["item"]["id"],slot["item"]["type"],slot["item"]["is_stackable"],slot["item"]["level"])
+                        self.slots[s].item = ItemInstance(slot["item"]["id"],slot["item"]["type"],slot["item"]["is_stackable"],slot["item"]["level"],slot["item"]["durability"])
                         self.slots[s].quantity = slot["quantity"]
                     self.slots[s].selected = slot["sel"]
                     self.slots[s].refresh_quantity_img()

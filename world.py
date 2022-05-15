@@ -1,10 +1,12 @@
+from secrets import choice
+from combat_system import CombatSystem
 from item import ItemInstance
 from player import Player
 import pygame
 from asset_loader import return_assets
-from settings import BLOCK_SIZE, CHUNK_SIZE, GRAPHICS_PATH, HEIGHT, WIDTH, FILE_NAMES,W_DATA_F
+from settings import BLOCK_SIZE, CHUNK_SIZE, ENTITIES, GRAPHICS_PATH, HEIGHT, WIDTH, FILE_NAMES,W_DATA_F
 from noise import pnoise1
-from data import block_ids,blocks_data, frames, tools_data
+from data import block_ids,blocks_data, frames, tools_data,items_data, entities_data
 from random import randint
 from structures import *
 from mining_system import MiningSystem
@@ -13,6 +15,7 @@ from build_system import BuildSystem
 from pygame_helper.helper_graphics import draw_image, load_image,scale_image
 from custom_button import CustomButton
 import psutil,os,time, json
+from entity import Entity
 
 class World:
     def __init__(self, screen,id,exit,get_fps,c_folder):
@@ -29,7 +32,7 @@ class World:
 
         self.f3_font = pygame.font.Font("assets/fonts/regular.ttf",30)
         self.f3_offset = 35
-        self.f3_spacing = 5
+        self.f3_spacing = 8
         self.is_f3 = False
 
         self.bg_img_0 = load_image("assets/graphics/world_bg/0.png")
@@ -61,6 +64,7 @@ class World:
         self.world_data = {}
         self.structures_data = []
         self.drops = []
+        self.entities = []
         self.player_blocks = []
         self.block_heights = {"stone":16,"dirt":8,"deepslate":50,"bedrock":64}
 
@@ -71,8 +75,9 @@ class World:
         self.height_multiplier = 5
         self.structure_render_offset = 5*BLOCK_SIZE
 
-        self.mining_system = MiningSystem(self.get_block_rects,self.get_chunk_rects,self.get_world_data,self.edit_chunk_data, self.get_scroll, self.get_structures,self.edit_structures, self.get_player_pos,self.player.hotbar.get_selected,self.add_drop,self.get_player_blocks,self.remove_player_block,self.player.statistics.get_hunger)
+        self.mining_system = MiningSystem(self.get_block_rects,self.get_chunk_rects,self.get_world_data,self.edit_chunk_data, self.get_scroll, self.get_structures,self.edit_structures, self.get_player_pos,self.player.hotbar.get_selected,self.add_drop,self.get_player_blocks,self.remove_player_block,self.player.statistics.get_hunger,self.player.change_selected_item)
         self.build_system = BuildSystem(self.get_free_pos_rects,self.player.hotbar.get_selected,self.add_block,self.get_current_block_id,self.update_current_block_id,self.player.hotbar.decrease_slot,self.player.get_rect,self.get_player_pos)
+        self.combat_system = CombatSystem(self.get_entities,self.player.hotbar.get_selected,self.player.get_rect,self.player.change_selected_item)
 
         self.exit = exit
         self.get_fps = get_fps
@@ -90,6 +95,12 @@ class World:
         self.load_data()
 
         self.loaded_entities = 0
+
+    def delete_entity(self,e):
+        self.entities.remove(e)
+
+    def get_entities(self):
+        return self.entities
 
     def load_data(self):
         name = W_DATA_F+self.id+"/"
@@ -159,8 +170,10 @@ class World:
             item = self.player.hotbar.get_selected().item
             if item.type == "blocks":
                 self.infos["selected"] = "Selected Item: "+blocks_data[item.id]["name"]
+            elif item.type == "items":
+                self.infos["selected"] = "Selected Item: "+items_data[item.id]["name"]
             elif item.type == "tools":
-                self.infos["selected"] = "Selected Item: "+tools_data[item.id][item.level]
+                self.infos["selected"] = "Selected Item: "+tools_data[item.id][item.level]["name"]
         else:
             self.infos["selected"] = "Selected Item: None"
 
@@ -247,15 +260,22 @@ class World:
         if self.drops:
             for drop in self.drops:
                 drop.rect.x -= self.player.x_speed*self.player.direction#*dt
+        if self.entities:
+            for e in self.entities:
+                e.rect.x -= self.player.x_speed*self.player.direction
 
     def scroll_y(self,dt):
         self.scroll.y += self.player.gravity#*dt
         if self.drops:
             for drop in self.drops:
                 drop.rect.y -= self.player.gravity#*dt
+        if self.entities:
+            for e in self.entities:
+                e.rect.y -= self.player.gravity
 
     def generate_chunk(self,x,y):
         has_tree = False
+        has_entity = False
         chunk_data = []
         unique_id = 0
         final__x = x*CHUNK_SIZE
@@ -266,7 +286,6 @@ class World:
             for x_pos in range(CHUNK_SIZE):
                 self.block_heights = {"stone":randint(15,17),"dirt":8,"deepslate":randint(46,54),"bedrock":randint(60,64)}
 
-                cooldown = 0
                 final_x = x*CHUNK_SIZE+x_pos
                 final_y = y*CHUNK_SIZE+y_pos
                 block_id = -1
@@ -275,8 +294,6 @@ class World:
                 collider = True
                 frame = 0
 
-                # if final_y > self.block_heights["bedrock"] - height:
-                #     block_id = -1 #void
                 if final_y >= self.block_heights["bedrock"] - height:
                     block_id = block_ids["bedrock"]
                 elif final_y >= self.block_heights["deepslate"] - height:
@@ -300,7 +317,13 @@ class World:
                                 self.structures_data.append(tree_data[0])
                                 self.structure_b_id = tree_data[1]
                                 has_tree = True
-                
+                    if not has_tree and not has_entity:
+                        e_name = choice(ENTITIES)
+                        if randint(0,100) <= entities_data[e_name]["chances"]:
+                            e = Entity((final_x*BLOCK_SIZE-self.scroll.x,final_y*BLOCK_SIZE-self.scroll.y),e_name,self.add_drop,self.delete_entity)
+                            self.entities.append(e)
+                        has_entity = True
+
                 if block_id != -1:
                     chunk_data.append({"pos":[final_x,final_y],"id":block_id,"collider":collider,"frame":frame,"unique":unique_id})
                 elif block_id == -1:
@@ -360,6 +383,15 @@ class World:
                     drop.update(self.rect_colliders)
                     self.loaded_entities += 1
 
+    def render_entities(self):
+        if self.entities:
+            for e in self.entities:
+                if e.rect.right > 0-BLOCK_SIZE*3 and e.rect.left < WIDTH+BLOCK_SIZE*3 and e.rect.bottom > 0-BLOCK_SIZE*3 and e.rect.top < HEIGHT+BLOCK_SIZE*3:
+                    e.draw()
+                    if not self.is_dead and not self.is_paused:
+                        e.update(self.rect_colliders)
+                    self.loaded_entities += 1
+
     def death_actions(self):
         draw_image(self.red_tint,(0,0))
         draw_image(self.death_img_2,(self.death_rect.topleft[0]+5,self.death_rect.topleft[1]+5))
@@ -399,6 +431,7 @@ class World:
         self.render_structures()
         
         self.render_player_blocks()
+        self.render_entities()
         if not self.is_dead:
             self.player.custom_draw()
 
@@ -433,6 +466,7 @@ class World:
                 if not self.player.inventory_open:
                     self.mining_system.update(mouse)
                     self.build_system.update(mouse)
+                    self.combat_system.update(mouse)
             
         # player
         self.player.update(self.rect_colliders,dt,mouse)

@@ -34,6 +34,11 @@ class Statistics:
 
         self.trigger_death = trigger_death
 
+    def fill_hunger(self,value):
+        self.player_hunger += value
+        if self.player_hunger >= self.max_hunger:
+            self.player_hunger = self.max_hunger
+
     def get_hunger(self):
         return self.player_hunger
 

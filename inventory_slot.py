@@ -23,6 +23,9 @@ class InventorySlot:
     def refresh_quantity_img(self):
         self.quantity_img = quantity_font.render(str(self.quantity),False,"black")
 
+    def refresh_durability(self):
+        pass
+
     def __copy__(self):
         copy = InventorySlot()
         copy.empty = False
