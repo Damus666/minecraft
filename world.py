@@ -16,6 +16,7 @@ from pygame_helper.helper_graphics import draw_image, load_image,scale_image
 from custom_button import CustomButton
 import psutil,os,time, json
 from entity import Entity
+from entities import PorcupineEntity
 
 class World:
     def __init__(self, screen,id,exit,get_fps,c_folder):
@@ -117,6 +118,14 @@ class World:
                     d = Drop((drop["pos"][0]+drop["offset"],drop["pos"][1]),ItemInstance(drop["item"]["id"],drop["item"]["type"],drop["item"]["is_stackable"]),drop["quantity"])
                     self.drops.append(d)
 
+            with open(name+FILE_NAMES["entity"],"r") as e_file:
+                entity_dict = json.load(e_file)
+                for e in entity_dict["entities"]:
+                    match e["type"]:
+                        case "porcupine":
+                            new_e = PorcupineEntity(e["pos"],e["type"],self.add_drop,self.delete_entity,e["health"],e["p_f"])
+                            self.entities.append(new_e)
+
             with open(name+FILE_NAMES["other"],"r") as o_file:
                 other = json.load(o_file)
                 self.scroll = pygame.Vector2((other["scroll"][0],other["scroll"][1]))
@@ -140,6 +149,10 @@ class World:
             drop_dict = {"drops":[{"pos":(drop.rect.centerx,drop.rect.centery-20),"offset":drop.offset,"quantity":drop.quantity,"item":{"id":drop.item.id,"type":drop.item.type,"is_stackable":drop.item.is_stackable}} for drop in self.drops]}
             with open(name+FILE_NAMES["drop"],"w") as d_file:
                 json.dump(drop_dict,d_file)
+
+            entity_dict = {"entities":[{"pos":(e.rect.centerx,e.rect.centery-20),"type":e.type,"health":e.health,"p_f":e.pixel_fell} for e in self.entities]}
+            with open(name+FILE_NAMES["entity"],"w") as e_file:
+                json.dump(entity_dict,e_file)
 
             other_dict = {"scroll":[self.scroll.x,self.scroll.y],"structure_b_id":self.structure_b_id,"player_b_id":self.player_block_id,"seconds":self.seconds}
             with open(name+FILE_NAMES["other"],"w") as o_file:
@@ -320,8 +333,10 @@ class World:
                     if not has_tree and not has_entity:
                         e_name = choice(ENTITIES)
                         if randint(0,100) <= entities_data[e_name]["chances"]:
-                            e = Entity((final_x*BLOCK_SIZE-self.scroll.x,final_y*BLOCK_SIZE-self.scroll.y),e_name,self.add_drop,self.delete_entity)
-                            self.entities.append(e)
+                            match e_name:
+                                case "porcupine":
+                                    e = PorcupineEntity((final_x*BLOCK_SIZE-self.scroll.x,final_y*BLOCK_SIZE-self.scroll.y),e_name,self.add_drop,self.delete_entity)
+                                    self.entities.append(e)
                         has_entity = True
 
                 if block_id != -1:

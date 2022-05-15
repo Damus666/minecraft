@@ -39,7 +39,7 @@ WALK_COOLDOWN = 500
 
 BG_CHANGE_COOLDOWN = 20*1000
 
-FILE_NAMES = {"chunk":"chunks_data.json","structure":"structures_data.json","block":"player_blocks_data.json","drop":"drops_data.json","other":"world_data.json"}
+FILE_NAMES = {"chunk":"chunks_data.json","structure":"structures_data.json","block":"player_blocks_data.json","drop":"drops_data.json","other":"world_data.json","entity":"entities_data.json"}
 
 ENTITY_DIR_COOLDOWN = 10*1000
 

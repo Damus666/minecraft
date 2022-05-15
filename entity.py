@@ -9,7 +9,7 @@ from pygame_helper.pygame_helper import debug
 
 
 class Entity:
-    def __init__(self, start_pos, type, add_drop,delete_entity):
+    def __init__(self, start_pos, type, add_drop,delete_entity,h=None,p_f=0):
 
         scale = 0.8
         self.type = type
@@ -26,11 +26,12 @@ class Entity:
         self.is_standing = False
         self.is_moving = False
         self.first_time_land = False
-        self.pixel_fell = 0
+        self.pixel_fell = p_f
         self.direction = -1
 
         self.max_health = entities_data[self.type]["health"]
-        self.health = self.max_health
+        if h: self.health = h
+        else: self.health = self.max_health
 
         self.last_change = 0
 
@@ -124,10 +125,13 @@ class Entity:
         if pygame.time.get_ticks()-self.last_change >= ENTITY_DIR_COOLDOWN:
             self.last_change = pygame.time.get_ticks()
             dir = choice([-1, 0, 1])
+            flip = False
             if dir != 0:
                 if dir != self.direction:
-                    self.flip_image()
+                    flip = True
             self.direction = dir
+            if flip:
+                self.flip_image()
 
     def move(self):
         self.rect.x += self.x_speed*self.direction
@@ -142,4 +146,4 @@ class Entity:
         self.move()
 
     def draw(self):
-        self.draw_body()
+        """override"""
