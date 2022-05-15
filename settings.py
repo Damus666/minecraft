@@ -4,8 +4,8 @@ screensize = user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
 
 WIDTH = screensize[0]
 HEIGHT = screensize[1]
-#WIDTH = 1200
-#HEIGHT = 800
+WIDTH = 1200
+HEIGHT = 800
 FPS = 60
 
 BLOCK_SIZE = 80
@@ -34,6 +34,7 @@ SAFE_BLOCKS_NUM = 4
 
 HEALTH_REGEN_COOLDOWN = 20*1000
 HUNGER_DECREASE_COOLDOWN = 60*1000
+WALK_COOLDOWN = 500
 
 BG_CHANGE_COOLDOWN = 20*1000
 

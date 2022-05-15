@@ -394,14 +394,13 @@ class World:
         self.draw_bg()
 
         # player
-        if not self.is_dead:
-            self.player.draw()
             
         self.render_chunks()
         self.render_structures()
         
         self.render_player_blocks()
-        self.player.draw_selected_item()
+        if not self.is_dead:
+            self.player.custom_draw()
 
         if self.is_f3:
             self.draw_f3_infos()
