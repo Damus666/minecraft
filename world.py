@@ -4,7 +4,7 @@ from item import ItemInstance
 from player import Player
 import pygame
 from asset_loader import return_assets
-from settings import BLOCK_SIZE, CHUNK_SIZE, ENTITIES, GRAPHICS_PATH, HEIGHT, WIDTH, FILE_NAMES,W_DATA_F,DAY_DURATION,NIGHT_DURATION,TRANSITION_DUR
+from settings import BLOCK_SIZE, CHUNK_SIZE, ENTITIES, GRAPHICS_PATH, HEIGHT, MONSTERS, WIDTH, FILE_NAMES,W_DATA_F,DAY_DURATION,NIGHT_DURATION,TRANSITION_DUR
 from noise import pnoise1
 from data import block_ids,blocks_data, frames, tools_data,items_data, entities_data
 from random import randint
@@ -15,7 +15,7 @@ from build_system import BuildSystem
 from pygame_helper.helper_graphics import draw_image, load_image,scale_image
 from custom_button import CustomButton
 import psutil,os,time, json
-from entities import PorcupineEntity
+from entities import PorcupineEntity, ZombieEntity
 
 class World:
     def __init__(self, screen,id,exit,get_fps,c_folder):
@@ -69,7 +69,8 @@ class World:
         self.world_data = {}
         self.structures_data = []
         self.drops = []
-        self.entities = []
+        self.animal_entities = []
+        self.monster_entities = []
         self.player_blocks = []
         self.block_heights = {"stone":16,"dirt":8,"deepslate":50,"bedrock":64}
 
@@ -122,9 +123,26 @@ class World:
         self.range_x = int(WIDTH/self.bg_sizes[0])+1
         self.range_y = (int(HEIGHT/self.bg_sizes[1])+1)-3
 
-        self.keys = ["Keys:","Walk: 'A' & 'D'","Jump: 'SPACE'","Pause: 'ESC'","This Menu: 'F3'","Destroy/Attack: 'MOUSE_LEFT'","Place: 'MOUSE_RIGHT'","Item Interaction: 'R'","Open Inventory: 'E'"]
+        self.keys = ["Keys:","Walk: 'A' & 'D'","Jump: 'SPACE'","Pause: 'ESC'","This Menu: 'F3'","Destroy/Attack: 'MOUSE_LEFT'","Place: 'MOUSE_RIGHT'","Item Interaction: 'R'","Open Inventory: 'E'","Drop Items: 'Q'"]
 
         self.load_data()
+
+    def spawn_monsters(self):
+        for chunk in self.world_data.values():
+            c = False
+            for block in chunk:
+                if block["id"] == block_ids["grassblock"]:
+                    m_name = choice(MONSTERS)
+                    if randint(0,100) <= entities_data[m_name]["chances"]:
+                        pos = block["pos"][0],block["pos"][1]-1
+                        pos = pos[0]*BLOCK_SIZE-self.scroll.x,pos[1]*BLOCK_SIZE-self.scroll.y
+                        match m_name:
+                            case "zombie":
+                                z = ZombieEntity(pos,m_name,self.add_drop,self.delete_entity,self.player.get_rect,self.player.statistics.damage_player)
+                                self.monster_entities.append(z)
+                    c = True
+            if c:
+                continue
 
     def draw_day_night(self):
         if self.night_tint.get_alpha() > 0:
@@ -140,9 +158,11 @@ class World:
         if self.alpha <= 0:
             self.alpha = 0
             self.is_in_transition = False
+            self.monster_entities.clear()
         if self.alpha >= self.max_night_alpha:
             self.alpha = self.max_night_alpha
             self.is_in_transition = False
+            self.spawn_monsters()
         self.night_tint.set_alpha(self.alpha)
 
     def update_day_night(self,dt):
@@ -167,10 +187,13 @@ class World:
         self.last_milli = pygame.time.get_ticks()
 
     def delete_entity(self,e):
-        self.entities.remove(e)
+        try:
+            self.animal_entities.remove(e)
+        except:
+            self.monster_entities.remove(e)
 
     def get_entities(self):
-        return self.entities
+        return self.animal_entities+self.monster_entities
 
     def load_data(self):
         name = W_DATA_F+self.id+"/"
@@ -193,7 +216,12 @@ class World:
                     match e["type"]:
                         case "porcupine":
                             new_e = PorcupineEntity(e["pos"],e["type"],self.add_drop,self.delete_entity,e["health"],e["p_f"])
-                            self.entities.append(new_e)
+                            self.animal_entities.append(new_e)
+                for e in entity_dict["monsters"]:
+                    match e["type"]:
+                        case "zombie":
+                            new_e = ZombieEntity(e["pos"],e["type"],self.add_drop,self.delete_entity,self.player.get_rect,self.player.statistics.damage_player,e["health"],e["p_f"])
+                            self.animal_entities.append(new_e)
 
             with open(name+FILE_NAMES["other"],"r") as o_file:
                 other = json.load(o_file)
@@ -224,7 +252,7 @@ class World:
             with open(name+FILE_NAMES["drop"],"w") as d_file:
                 json.dump(drop_dict,d_file)
 
-            entity_dict = {"entities":[{"pos":(e.rect.centerx,e.rect.centery-20),"type":e.type,"health":e.health,"p_f":e.pixel_fell} for e in self.entities]}
+            entity_dict = {"animals":[{"pos":(e.rect.centerx,e.rect.centery-20),"type":e.type,"health":e.health,"p_f":e.pixel_fell} for e in self.animal_entities],"monsters":[{"pos":(e.rect.centerx,e.rect.centery-20),"type":e.type,"health":e.health,"p_f":e.pixel_fell} for e in self.monster_entities]}
             with open(name+FILE_NAMES["entity"],"w") as e_file:
                 json.dump(entity_dict,e_file)
 
@@ -253,16 +281,18 @@ class World:
         self.infos["time"] = "Time Played: "+time.strftime("%H:%M:%S", time.gmtime(self.seconds))
         self.infos["last_save"] = "Last Save: "+str(int(((pygame.time.get_ticks()-self.last_save)/1000)/60))+" Minutes Ago"
         self.infos["render"] = "Rendering: "+str(len(self.chunk_colliders))+" Chunks, "+str(len(self.rect_colliders))+" Blocks, "+str(self.loaded_entities+1)+" Entities"
-        if self.player.hotbar.get_selected().empty == False:
-            item = self.player.hotbar.get_selected().item
-            if item.type == "blocks":
-                self.infos["selected"] = "Selected Item: "+blocks_data[item.id]["name"]
-            elif item.type == "items":
-                self.infos["selected"] = "Selected Item: "+items_data[item.id]["name"]
-            elif item.type == "tools":
-                self.infos["selected"] = "Selected Item: "+tools_data[item.id][item.level]["name"]
-        else:
-            self.infos["selected"] = "Selected Item: None"
+        try:
+            if self.player.hotbar.get_selected().empty == False:
+                item = self.player.hotbar.get_selected().item
+                if item.type == "blocks":
+                    self.infos["selected"] = "Selected Item: "+blocks_data[item.id]["name"]
+                elif item.type == "items":
+                    self.infos["selected"] = "Selected Item: "+items_data[item.id]["name"]
+                elif item.type == "tools":
+                    self.infos["selected"] = "Selected Item: "+tools_data[item.id][item.level]["name"]
+            else:
+                self.infos["selected"] = "Selected Item: None"
+        except:pass
 
         self.extra_infos["ram"] = self.get_memory()
         self.extra_infos["cpu"] = self.get_cpu()
@@ -350,18 +380,26 @@ class World:
         if self.drops:
             for drop in self.drops:
                 drop.rect.x -= self.player.x_speed*self.player.direction#*dt
-        if self.entities:
-            for e in self.entities:
+        if self.animal_entities:
+            for e in self.animal_entities:
                 e.rect.x -= self.player.x_speed*self.player.direction
+        if not self.is_day:
+            if self.monster_entities:
+                for m in self.monster_entities:
+                    m.rect.x -= self.player.x_speed*self.player.direction
 
     def scroll_y(self,dt):
         self.scroll.y += self.player.gravity#*dt
         if self.drops:
             for drop in self.drops:
                 drop.rect.y -= self.player.gravity#*dt
-        if self.entities:
-            for e in self.entities:
+        if self.animal_entities:
+            for e in self.animal_entities:
                 e.rect.y -= self.player.gravity
+        if not self.is_day:
+            if self.monster_entities:
+                for m in self.monster_entities:
+                    m.rect.y -= self.player.gravity
 
     def generate_chunk(self,x,y):
         has_tree = False
@@ -413,7 +451,7 @@ class World:
                             match e_name:
                                 case "porcupine":
                                     e = PorcupineEntity((final_x*BLOCK_SIZE-self.scroll.x,final_y*BLOCK_SIZE-self.scroll.y),e_name,self.add_drop,self.delete_entity)
-                                    self.entities.append(e)
+                                    self.animal_entities.append(e)
                         has_entity = True
 
                 if block_id != -1:
@@ -476,12 +514,22 @@ class World:
                     self.loaded_entities += 1
 
     def render_entities(self):
-        if self.entities:
-            for e in self.entities:
+        if self.animal_entities:
+            for e in self.animal_entities:
                 if e.rect.right > 0-BLOCK_SIZE*3 and e.rect.left < WIDTH+BLOCK_SIZE*3 and e.rect.bottom > 0-BLOCK_SIZE*3 and e.rect.top < HEIGHT+BLOCK_SIZE*3:
                     e.draw()
                     if not self.is_dead and not self.is_paused:
+                        e.walk_animation()
                         e.update(self.rect_colliders)
+                    self.loaded_entities += 1
+        if not self.is_day:
+            if self.monster_entities:
+                for m in self.monster_entities:
+                    if m.rect.right > 0-BLOCK_SIZE*3 and m.rect.left < WIDTH+BLOCK_SIZE*3 and m.rect.bottom > 0-BLOCK_SIZE*3 and m.rect.top < HEIGHT+BLOCK_SIZE*3:
+                        m.draw()
+                        if not self.is_dead and not self.is_paused:
+                            m.walk_animation()
+                            m.update(self.rect_colliders)
                     self.loaded_entities += 1
 
     def death_actions(self):

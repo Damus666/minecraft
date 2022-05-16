@@ -84,6 +84,9 @@ class MiningSystem:
                                     self.cooldown/= (((self.get_selected().item.level+1)/5)+1)
                             else:
                                 self.cooldown = blocks_data[bl["id"]]["mine_cooldown"]*blocks_data[bl["id"]]["max_cooldown"]
+                                if self.get_selected().item.type == "tools":
+                                    if self.get_selected().item.level > 0:
+                                        self.cooldown/= (((self.get_selected().item.level+1)/5)+1)
                             hunger__multiplier = (MAX_HUNGER-self.get_player_hunger())/20 +1
                             self.cooldown *= hunger__multiplier
                             self.frame_speed = self.cooldown // self.frame_num
@@ -131,6 +134,9 @@ class MiningSystem:
                                     self.cooldown/= (((self.get_selected().item.level+1)/5)+1)
                             else:
                                 self.cooldown = blocks_data[bl["id"]]["mine_cooldown"]*blocks_data[bl["id"]]["max_cooldown"]
+                                if self.get_selected().item.type == "tools":
+                                    if self.get_selected().item.level > 0:
+                                        self.cooldown/= (((self.get_selected().item.level+1)/5)+1)
                             hunger__multiplier = (MAX_HUNGER-self.get_player_hunger())/20 +1
                             self.cooldown *= hunger__multiplier
                             self.frame_speed = self.cooldown // self.frame_num
@@ -234,6 +240,9 @@ class MiningSystem:
                                     self.cooldown/= (((self.get_selected().item.level+1)/5)+1)
                             else:
                                 self.cooldown = blocks_data[bl["id"]]["mine_cooldown"]*blocks_data[bl["id"]]["max_cooldown"]
+                                if self.get_selected().item.type == "tools":
+                                    if self.get_selected().item.level > 0:
+                                        self.cooldown/= (((self.get_selected().item.level+1)/5)+1)
                             hunger__multiplier = (MAX_HUNGER-self.get_player_hunger())/20 +1
                             self.cooldown *= hunger__multiplier
                             self.frame_speed = self.cooldown // self.frame_num

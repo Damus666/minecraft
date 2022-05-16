@@ -86,14 +86,27 @@ tools_data = {
 
 entities_data = {
     "porcupine":{"name":"porcupine",
+                "type":"animal",
                 "speed":3,
                 "health":10,
-                "chances":5}
+                "chances":5},
+    "zombie":{"name":"zombie",
+                "type":"monster",
+                "speed":5,
+                "health":20,
+                "chances":3,
+                "target_range":30,
+                "attack_range":1.5,
+                "attack_damage":1,
+                "attack_cooldown":2*1000},
 }
 
 items_ids = {
     "meat":0,
     "cookedmeat":1,
+    "bone":2,
+    "brown_fungus":3,
+    "white_fungus":4,
 }
 
 items_data = {
@@ -104,5 +117,13 @@ items_data = {
     items_ids["cookedmeat"]: {"name":"cooked_meat",
                              "type":"food",
                              "hunger":6,},
+    
+    items_ids["brown_fungus"]: {"name":"brown_mushroom",
+                             "type":"food",
+                             "hunger":1,},
+
+    items_ids["white_fungus"]: {"name":"white_mushroom",
+                             "type":"food",
+                             "hunger":1,},
 }
 

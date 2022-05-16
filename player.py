@@ -75,6 +75,7 @@ class Player():
 
         self.first_time_land = False
         self.pixel_fell = 0
+        self.r_offset = self.body_img.get_width()/4
 
         self.v = 3
         self.started_moving = False
@@ -194,16 +195,16 @@ class Player():
 
         match self.leg_direction.x:
             case 1:
-                self.right_leg_rect = self.right_leg_img.get_rect(topleft=self.rect.midbottom)
+                self.right_leg_rect = self.right_leg_img.get_rect(topleft=(self.rect.centerx-self.r_offset,self.rect.bottom))
             case -1:
-                self.right_leg_rect = self.right_leg_img.get_rect(topright=self.rect.midbottom)
+                self.right_leg_rect = self.right_leg_img.get_rect(topright=(self.rect.centerx+self.r_offset,self.rect.bottom))
             case 0:
                 self.right_leg_rect = self.right_leg_img.get_rect(midtop=self.rect.midbottom)
         match self.leg_direction.y:
             case 1:
-                self.left_leg_rect = self.left_leg_img.get_rect(topleft=self.rect.midbottom)
+                self.left_leg_rect = self.left_leg_img.get_rect(topleft=(self.rect.centerx-self.r_offset,self.rect.bottom))
             case -1:
-                self.left_leg_rect = self.left_leg_img.get_rect(topright=self.rect.midbottom)
+                self.left_leg_rect = self.left_leg_img.get_rect(topright=(self.rect.centerx+self.r_offset,self.rect.bottom))
             case 0:
                 self.left_leg_rect = self.left_leg_img.get_rect(midtop=self.rect.midbottom)
 
@@ -395,15 +396,15 @@ class Player():
                                 if self.rect.right > obs.left:
                                     self.can_move_d = False
                                     self.rect.right = obs.left
-                                    if self.gravity < 0 and r.bottom < obs.centery:
-                                        self.rect.bottom = obs.top-self.inf_height
+                                    if r.bottom < obs.centery:
+                                        self.rect.bottom = obs.top-self.inf_height-3
                         elif self.direction == -1:
                             if 0 < (self.rect.left+15)-(obs.right-15)< BLOCK_SIZE//2 :
                                 if self.rect.left < obs.right:
                                     self.can_move_a = False
                                     self.rect.left = obs.right
-                                    if self.gravity < 0 and r.bottom < obs.centery:
-                                        self.rect.bottom = obs.top-self.inf_height
+                                    if r.bottom < obs.centery:
+                                        self.rect.bottom = obs.top-self.inf_height-3
                     else: 
                         if not inf_y.colliderect(obs):
                             not_collided += 1
