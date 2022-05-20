@@ -1,14 +1,15 @@
 from pygame_helper.pygame_helper import debug
 from pygame_helper.helper_graphics import draw_image, load_image, scale_image
 from item import ItemInstance
-from settings import GRAPHICS_PATH, GRAVITY_CONSTANT, BLOCK_SIZE, SAFE_BLOCKS_NUM, ENTITY_DIR_COOLDOWN
+from settings import GRAPHICS_PATH, GRAVITY_CONSTANT, BLOCK_SIZE, MOB_DAMAGE_COOLDOWN, SAFE_BLOCKS_NUM,PLAYER_DAMAGE_COOLDOWN
 from data import entities_data, items_ids
-from random import choice, randint
+from random import  randint
 from pygame.transform import flip
+import pygame
 
 
 class MonsterEntity:
-    def __init__(self, start_pos, type, add_drop,delete_entity,h=None,p_f=0):
+    def __init__(self, start_pos, type, add_drop,delete_entity,get_p_rect,damage_player,h=None,p_f=0):
 
         scale = 0.8
         self.type = type
@@ -48,6 +49,10 @@ class MonsterEntity:
         self.can_jump = True
         self.jump_speed = 10
 
+        self.get_p_rect = get_p_rect
+        self.damage_player = damage_player
+        self.last_hit = 0
+
         self.max_health = entities_data[self.type]["health"]
         if h: self.health = h
         else: self.health = self.max_health
@@ -61,11 +66,20 @@ class MonsterEntity:
 
         self.can_move_a = True
         self.can_move_d = True
+        self.can_attack = True
 
         self.drops = [{"id":items_ids["meat"],"type":"items","chances":100,"quantity":1,"more":[50,1]}]
 
+        self.damage_hoverlay = scale_image(load_image(f"{GRAPHICS_PATH}gui/damage/mob.png",True),None,self.width+10,self.height+self.inf_height+10)
+        self.damage_hoverlay.set_alpha(160)
+        self.damage_rect = self.damage_hoverlay.get_rect(center=self.rect.center)
+        self.is_damaging = False
+        self.start_an = 0
+
     def damage(self, damage):
         self.health -= damage
+        self.is_damaging = True
+        self.start_an = pygame.time.get_ticks()
         if self.health <= 0:
             self.health = 0
             self.die()
@@ -121,8 +135,7 @@ class MonsterEntity:
                                         self.rect.bottom = obs.top-self.inf_height
                                         self.is_standing = True
                                         self.gravity = 0
-                                        if abs(self.rect.centerx-obs.centerx) <= BLOCK_SIZE//2:
-                                            self.can_jump = True
+                                        self.can_jump = True
                                         if self.first_time_land:
                                             self.first_time_land = False
                                             blocks_fell = (
@@ -140,6 +153,7 @@ class MonsterEntity:
                                 if self.rect.right > obs.left:
                                     self.rect.right = obs.left
                                     self.can_move_d = False
+                                    self.can_attack = False
                                     if self.can_jump:
                                         self.jump()
                                     if r.bottom < obs.centery:
@@ -149,6 +163,7 @@ class MonsterEntity:
                                 if self.rect.left < obs.right:
                                     self.rect.left = obs.right
                                     self.can_move_a = False
+                                    self.can_attack = False
                                     if self.can_jump:
                                         self.jump()
                                     if r.bottom < obs.centery:
@@ -171,6 +186,8 @@ class MonsterEntity:
             self.first_time_land = True
         if not_call_l == near_blocks:
             self.can_move_a = True
+            if not_call_l == not_call_r:
+                self.can_attack = True
         if not_call_r == near_blocks:
             self.can_move_d = True
 
@@ -178,25 +195,33 @@ class MonsterEntity:
         if self.direction != 0:
             if self.direction == 1 and self.can_move_d:
                 self.rect.x += self.x_speed*self.direction
-                if not self.is_moving:
-                    self.is_moving = True
+                self.is_moving = True
+                self.can_attack = True
             if not self.can_move_d:
                 if self.is_moving:
                     self.is_moving = False
             if self.direction == -1 and self.can_move_a:
                 self.rect.x += self.x_speed*self.direction
-                if not self.is_moving:
-                    self.is_moving = True
+                self.is_moving = True
+                self.can_attack = True
             if not self.can_move_a:
                 if self.is_moving:
                     self.is_moving = False
+                    self.can_attack = True
         else:
             if self.is_moving:
                 self.is_moving = False
+                self.can_attack = True
 
     def jump(self):
         self.gravity -= self.jump_speed
         self.can_jump = False
+
+    def draw_overlay(self):
+        self.damage_rect.center = self.rect.center
+        if pygame.time.get_ticks()-self.start_an >= MOB_DAMAGE_COOLDOWN:
+            self.is_damaging = False
+        draw_image(self.damage_hoverlay,self.damage_rect)
 
     def draw_body(self):
         draw_image(self.body_img, self.rect)
@@ -205,7 +230,39 @@ class MonsterEntity:
         self.obstacles_collisions(obstacles)
         self.fall()
         self.move()
-        debug(self.direction,self.is_moving)
+        self.target_player()
+
+    def target_player(self):
+        if abs(self.rect.centery-self.get_p_rect().centery) <= entities_data[self.type]["target_range"]*BLOCK_SIZE:
+            if abs(self.rect.centerx-self.get_p_rect().centerx) <= entities_data[self.type]["target_range"]*BLOCK_SIZE:
+                if self.rect.centerx-self.get_p_rect().centerx > 0 and abs(self.rect.centerx-self.get_p_rect().centerx) > 20:
+                    if self.direction != -1:
+                        self.direction = -1
+                        self.flip_image()
+                    self.attack_player()
+                elif self.rect.centerx-self.get_p_rect().centerx < 0 and abs(self.rect.centerx-self.get_p_rect().centerx) > 20:
+                    if self.direction != 1:
+                        self.direction = 1
+                        self.flip_image()
+                    self.attack_player()
+                else:
+                    if self.direction != 0:
+                        self.direction = 0
+                    self.attack_player()
+            else:
+                if self.direction != 0:
+                    self.direction = 0
+        else:
+            if self.direction != 0:
+                self.direction = 0
+
+    def attack_player(self):
+        if self.can_attack:
+            if abs(self.rect.centerx-self.get_p_rect().centerx) <= entities_data[self.type]["attack_range"]*BLOCK_SIZE:
+                if abs(self.rect.centery-self.get_p_rect().centery) <= entities_data[self.type]["attack_range"]*BLOCK_SIZE:
+                    if pygame.time.get_ticks()-self.last_hit >= entities_data[self.type]["attack_cooldown"]:
+                        self.last_hit = pygame.time.get_ticks()
+                        self.damage_player(entities_data[self.type]["attack_damage"])
 
     def draw(self):
         """override"""

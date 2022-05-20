@@ -1,5 +1,5 @@
 import pygame
-from settings import MAX_HEALTH, MAX_HUNGER, GRAPHICS_PATH, HEALTH_REGEN_COOLDOWN,ITEM_SIZE,SLOT_OFFSET_H, HUNGER_DECREASE_COOLDOWN
+from settings import MAX_HEALTH, MAX_HUNGER, GRAPHICS_PATH, HEALTH_REGEN_COOLDOWN,ITEM_SIZE,SLOT_OFFSET_H, HUNGER_DECREASE_COOLDOWN,PLAYER_DAMAGE_COOLDOWN,WIDTH,HEIGHT
 from pygame_helper.helper_graphics import draw_image,scale_image,load_image
 
 class Statistics:
@@ -33,6 +33,13 @@ class Statistics:
         self.decrease_cooldown = HUNGER_DECREASE_COOLDOWN
 
         self.trigger_death = trigger_death
+
+        self.damage_hoverlay = scale_image(load_image(f"{GRAPHICS_PATH}gui/damage/0.png",True),None,WIDTH,HEIGHT)
+        self.damage_hoverlay.set_alpha(0)
+        self.hoverlay_alpha = 0
+        self.max_hoverlay_alpha = 200
+        self.decrease_speed = self.max_hoverlay_alpha/PLAYER_DAMAGE_COOLDOWN
+        self.last_ticks = 0
 
     def fill_hunger(self,value):
         self.player_hunger += value
@@ -73,8 +80,20 @@ class Statistics:
         if self.player_health <= 0:
             self.player_health = 0
             self.trigger_death()
+        self.hoverlay_alpha = self.max_hoverlay_alpha
+
+    def draw_hoverlay(self):
+        self.hoverlay_alpha -= self.decrease_speed*(pygame.time.get_ticks()-self.last_ticks)
+        if self.hoverlay_alpha <= 0:
+            self.hoverlay_alpha = 0
+        self.damage_hoverlay.set_alpha(self.hoverlay_alpha)
+        draw_image(self.damage_hoverlay,(0,0))
+        
 
     def draw(self):
+
+        if self.hoverlay_alpha > 0:
+            self.draw_hoverlay()
 
         for i in range(self.max_health//2):
             draw_image(self.empty_heart_img,(self.left_x+i*self.item_size+i*self.offset,self.bottom_y-self.offset*2.5-self.item_size))
@@ -89,3 +108,5 @@ class Statistics:
             draw_image(self.full_hunger_img,(self.left_x+self.lenght+SLOT_OFFSET_H-o*self.item_size-o*self.offset-self.offset*2,self.bottom_y-self.offset*2.5-self.item_size))
         if self.player_hunger%2 != 0:
             draw_image(self.half_hunger_img,(self.left_x+self.lenght+SLOT_OFFSET_H-(self.player_hunger//2)*self.item_size-(self.player_hunger//2)*self.offset-self.offset*2,self.bottom_y-self.offset*2.5-self.item_size))
+
+        self.last_ticks = pygame.time.get_ticks()

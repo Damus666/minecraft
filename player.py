@@ -174,6 +174,7 @@ class Player():
             self.right_angle += self.v*self.go_right
             self.left_angle += self.v*self.go_left
 
+
     def custom_draw(self):
         self.walk_animation()
 

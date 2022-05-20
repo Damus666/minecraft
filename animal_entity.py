@@ -1,7 +1,7 @@
 import pygame
 from pygame_helper.helper_graphics import draw_image, load_image, scale_image
 from item import ItemInstance
-from settings import GRAPHICS_PATH, GRAVITY_CONSTANT, BLOCK_SIZE, SAFE_BLOCKS_NUM, ENTITY_DIR_COOLDOWN
+from settings import GRAPHICS_PATH, GRAVITY_CONSTANT, BLOCK_SIZE, MOB_DAMAGE_COOLDOWN, SAFE_BLOCKS_NUM, ENTITY_DIR_COOLDOWN
 from data import entities_data, items_ids
 from random import choice, randint
 from pygame.transform import flip
@@ -37,17 +37,32 @@ class AnimalEntity:
         self.last_change = 0
 
         self.width = self.body_img.get_width()
+        self.height = self.body_img.get_height()
 
         self.add_drop = add_drop
         self.delete_entity = delete_entity
 
-        self.drops = [{"id":items_ids["meat"],"type":"items","chances":100,"quantity":1,"more":[50,1]}]
+        self.drops = [{"id":items_ids["meat"],"type":"items","chances":100,"quantity":1,"more":[20,1]}]
+
+        self.damage_hoverlay = scale_image(load_image(f"{GRAPHICS_PATH}gui/damage/mob.png",True),None,self.width+10+self.inf_width,self.height+10)
+        self.damage_hoverlay.set_alpha(160)
+        self.damage_rect = self.damage_hoverlay.get_rect(center=self.rect.center)
+        self.is_damaging = False
+        self.start_an = 0
 
     def damage(self, damage):
         self.health -= damage
+        self.is_damaging = True
+        self.start_an = pygame.time.get_ticks()
         if self.health <= 0:
             self.health = 0
             self.die()
+
+    def draw_overlay(self):
+        self.damage_rect.center = self.rect.center
+        if pygame.time.get_ticks()-self.start_an >= MOB_DAMAGE_COOLDOWN:
+            self.is_damaging = False
+        draw_image(self.damage_hoverlay,self.damage_rect)
 
     def die(self):
         if self.drops:

@@ -90,15 +90,26 @@ entities_data = {
                 "speed":3,
                 "health":10,
                 "chances":5},
+
     "zombie":{"name":"zombie",
                 "type":"monster",
-                "speed":5,
+                "speed":3,
                 "health":20,
                 "chances":3,
-                "target_range":30,
-                "attack_range":1.5,
+                "target_range":20,
+                "attack_range":1,
                 "attack_damage":1,
                 "attack_cooldown":2*1000},
+
+    "skeleton":{"name":"skeleton",
+                "type":"monster",
+                "speed":4,
+                "health":20,
+                "chances":2,
+                "target_range":30,
+                "attack_range":2,
+                "attack_damage":2,
+                "attack_cooldown":4*1000},
 }
 
 items_ids = {
@@ -125,5 +136,9 @@ items_data = {
     items_ids["white_fungus"]: {"name":"white_mushroom",
                              "type":"food",
                              "hunger":1,},
+
+    items_ids["bone"]: {"name":"bone",
+                             "type":"misc",
+                             },
 }
 
