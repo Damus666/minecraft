@@ -1,8 +1,8 @@
 from pygame_helper.pygame_helper import *
 from settings import WIDTH,HEIGHT,FPS, W_DATA_F
-from world import World
+from world.world import World
 import time, sys, os, string
-from main_menu import MainMenu
+from menu.main_menu import MainMenu
 from random import choice
 
 screen = init_setup(WIDTH,HEIGHT,"PyCraft",True)
