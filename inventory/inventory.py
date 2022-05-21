@@ -44,7 +44,7 @@ class Inventory:
     def move_inventory(self,dir):
         self.y_offset += self.y_pos_special*dir
         self.load_rects()
-        self.inv_rect.y += self.y_offset*dir
+        self.inv_rect.y += self.y_pos_special*dir
 
     def save_data(self,id):
         try:
@@ -128,6 +128,29 @@ class Inventory:
                     return str(x)+";"+str(y)
         return False
 
+    def remove_item(self,type,id,quantity):
+        quantity_removed = 0
+        for slot in self.slots.values():
+            if quantity_removed == quantity:
+                break
+            if slot.empty == False:
+                if slot.item.type == type and slot.item.id == id:
+                    if slot.quantity == 1:
+                        slot.item = None
+                        slot.empty = True
+                        quantity_removed+= 1
+                    else:
+                        previous = slot.quantity
+                        slot.quantity -= quantity
+                        if slot.quantity <= 0:
+                            slot.item = None
+                            slot.empty = True
+                            slot.quantity = 1
+                            quantity_removed+= previous
+                        else:
+                            quantity_removed += previous-quantity
+                    slot.refresh_quantity_img()
+
     def get_free_pos_by_id(self,id,type):
         free_pos = []
         for y in range(self.rows):
@@ -143,6 +166,9 @@ class Inventory:
         if free_pos:
             return free_pos[0]
         return False
+
+    def get_slots(self):
+        return self.slots
 
     def render_slots(self):
         draw_image(self.bg_tint,(0,0))

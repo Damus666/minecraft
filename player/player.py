@@ -80,6 +80,7 @@ class Player():
         self.v = 3
         self.started_moving = False
         self.close_crafting = close_crafting
+        self.refresh_crafting = None
 
     def save_data(self,id):
         try:
@@ -141,10 +142,6 @@ class Player():
                 self.selected_item.image = pygame.transform.flip(self.selected_item.image,True,False)
 
     def give_starter_items(self):
-        self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(0,"tools",False,0,200),1)
-        self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(1,"tools",False,0,200),1)
-        self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(2,"tools",False,0,200),1)
-        self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(3,"tools",False,0,200),1)
         self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(8,"blocks",True,0,1),1)
     
     def walk_animation(self):
@@ -319,6 +316,8 @@ class Player():
         if keys[pygame.K_q] and self.can_press:
             self.can_press = False
             self.drop_item()
+            if self.inventory_open:
+                self.refresh_crafting()
 
         if not keys[pygame.K_q] and not keys[pygame.K_r]:
             self.can_press = True
@@ -356,6 +355,8 @@ class Player():
         if self.rect.inflate(0,self.inf_height).colliderect(drop.rect):
             if self.inventory.get_free_pos_by_id(drop.item.id,drop.item.type):
                 self.inventory.add_item(self.inventory.get_free_pos_by_id(drop.item.id,drop.item.type),drop.item,drop.quantity)
+                if self.inventory_open:
+                    self.refresh_crafting()
                 return True
         return False
 
@@ -371,63 +372,64 @@ class Player():
                 self.can_jump = False
         if obstacles:
             for obstacle in obstacles:
-                obs = obstacle[0]
-                r = self.rect.inflate(0,self.inf_height*2)
-                inf_y = r.inflate(-self.width+10,2)
-                inf_x = r.inflate(2,-self.height/3)
-                if abs(obs.x-self.rect.x) <= BLOCK_SIZE*4 and abs(obs.y-self.rect.y) <= BLOCK_SIZE*4:
-                    near_blocks += 1
-                    if r.colliderect(obs):
-                        if self.gravity >= 0:
-                            if r.bottom > obs.top:
-                                if (r.bottom < obs.centery) or (self.rect.left > obs.left and self.rect.right < obs.right):
-                                    if self.rect.left < obs.right -5 or self.rect.right > obs.left + 5:
-                                        self.rect.bottom = obs.top-self.inf_height
-                                        self.is_standing = True
-                                        self.gravity = 0
-                                        self.can_jump = True
-                                        if self.first_time_land:
-                                            self.first_time_land = False
-                                            blocks_fell = ((self.pixel_fell)/BLOCK_SIZE)-SAFE_BLOCKS_NUM
-                                            if int(blocks_fell) > 0:
-                                                self.statistics.damage_player(int(blocks_fell))
-                                            self.pixel_fell = 0
-                        elif self.gravity < 0:
-                            if r.top < obs.bottom and r.top > obs.centery+15:
-                                self.rect.top = obs.bottom+self.inf_height
-                                self.is_standing = False
-                                self.gravity = 0
-                        #if self.is_moving:
-                        if self.direction == 1:
-                            if 0 < (obs.left+15)-(self.rect.right-15) < BLOCK_SIZE//2:
-                                if self.rect.right > obs.left:
-                                    self.can_move_d = False
-                                    self.rect.right = obs.left
-                                    if r.bottom < obs.centery:
-                                        self.rect.bottom = obs.top-self.inf_height-3
-                        elif self.direction == -1:
-                            if 0 < (self.rect.left+15)-(obs.right-15)< BLOCK_SIZE//2 :
-                                if self.rect.left < obs.right:
-                                    self.can_move_a = False
-                                    self.rect.left = obs.right
-                                    if r.bottom < obs.centery:
-                                        self.rect.bottom = obs.top-self.inf_height-3
-                    else: 
-                        if not inf_y.colliderect(obs):
-                            not_collided += 1
-                        if not inf_x.colliderect(obs):
+                if obstacle[2]:
+                    obs = obstacle[0]
+                    r = self.rect.inflate(0,self.inf_height*2)
+                    inf_y = r.inflate(-self.width+10,2)
+                    inf_x = r.inflate(2,-self.height/3)
+                    if abs(obs.x-self.rect.x) <= BLOCK_SIZE*4 and abs(obs.y-self.rect.y) <= BLOCK_SIZE*4:
+                        near_blocks += 1
+                        if r.colliderect(obs):
+                            if self.gravity >= 0:
+                                if r.bottom > obs.top:
+                                    if (r.bottom < obs.centery) or (self.rect.left > obs.left and self.rect.right < obs.right):
+                                        if self.rect.left < obs.right -5 or self.rect.right > obs.left + 5:
+                                            self.rect.bottom = obs.top-self.inf_height
+                                            self.is_standing = True
+                                            self.gravity = 0
+                                            self.can_jump = True
+                                            if self.first_time_land:
+                                                self.first_time_land = False
+                                                blocks_fell = ((self.pixel_fell)/BLOCK_SIZE)-SAFE_BLOCKS_NUM
+                                                if int(blocks_fell) > 0:
+                                                    self.statistics.damage_player(int(blocks_fell))
+                                                self.pixel_fell = 0
+                            elif self.gravity < 0:
+                                if r.top < obs.bottom and r.top > obs.centery+15:
+                                    self.rect.top = obs.bottom+self.inf_height
+                                    self.is_standing = False
+                                    self.gravity = 0
+                            #if self.is_moving:
                             if self.direction == 1:
-                                not_call_r += 1
+                                if 0 < (obs.left+15)-(self.rect.right-15) < BLOCK_SIZE//2:
+                                    if self.rect.right > obs.left:
+                                        self.can_move_d = False
+                                        self.rect.right = obs.left
+                                        if r.bottom < obs.centery:
+                                            self.rect.bottom = obs.top-self.inf_height-3
                             elif self.direction == -1:
-                                not_call_l += 1
+                                if 0 < (self.rect.left+15)-(obs.right-15)< BLOCK_SIZE//2 :
+                                    if self.rect.left < obs.right:
+                                        self.can_move_a = False
+                                        self.rect.left = obs.right
+                                        if r.bottom < obs.centery:
+                                            self.rect.bottom = obs.top-self.inf_height-3
+                        else: 
+                            if not inf_y.colliderect(obs):
+                                not_collided += 1
+                            if not inf_x.colliderect(obs):
+                                if self.direction == 1:
+                                    not_call_r += 1
+                                elif self.direction == -1:
+                                    not_call_l += 1
 
-        if not_collided == near_blocks:
-            self.is_standing = False
-            self.first_time_land = True
-        if not_call_l == near_blocks:
-            self.can_move_a = True
-        if not_call_r == near_blocks:
-            self.can_move_d = True
+            if not_collided == near_blocks:
+                self.is_standing = False
+                self.first_time_land = True
+            if not_call_l == near_blocks:
+                self.can_move_a = True
+            if not_call_r == near_blocks:
+                self.can_move_d = True
                     
     def move(self,dt):
         self.rect.x += self.x_speed*self.direction*dt

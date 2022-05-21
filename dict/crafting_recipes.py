@@ -1,4 +1,4 @@
-from data import block_ids,tool_types, items_ids
+from dict.data import block_ids,tool_types, items_ids
 
 recipes = {
     "blocks":{

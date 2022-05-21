@@ -1,0 +1,9 @@
+- food
+- enemies
+- day night
+- bug fix
+- damage feedback
+- better player animations
+- crafting not working
+
+try to take damage

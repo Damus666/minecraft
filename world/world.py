@@ -85,9 +85,10 @@ class World:
         self.mining_system = MiningSystem(self.get_block_rects,self.get_chunk_rects,self.get_world_data,self.edit_chunk_data, self.get_scroll, self.get_structures,self.edit_structures, self.get_player_pos,self.player.hotbar.get_selected,self.add_drop,self.get_player_blocks,self.remove_player_block,self.player.statistics.get_hunger,self.player.change_selected_item)
         self.build_system = BuildSystem(self.get_free_pos_rects,self.player.hotbar.get_selected,self.add_block,self.get_current_block_id,self.update_current_block_id,self.player.hotbar.decrease_slot,self.player.get_rect,self.get_player_pos,self.get_player_blocks,self.get_scroll,self.trigger_special_actions)
         self.combat_system = CombatSystem(self.get_entities,self.player.hotbar.get_selected,self.player.get_rect,self.player.change_selected_item)
-        self.crafting_system = CraftingSystem(self.player.inventory.inv_rect.left,self.player.inventory.inv_sizes[0],self.player.inventory.inv_rect.bottom+self.player.inventory.y_pos_special)
+        self.crafting_system = CraftingSystem(self.player.inventory.slot_rects["0;0"].left,self.player.inventory.inv_sizes[0],self.player.inventory.inv_rect.bottom+self.player.inventory.y_pos_special,self.player.inventory.get_slots,self.player.inventory.add_item,self.player.inventory.get_free_pos_by_id,self.player.inventory.remove_item)
 
         self.crafting_open = False
+        self.player.refresh_crafting = self.crafting_system.refresh_correct_items
 
         self.exit = exit
         self.get_fps = get_fps
@@ -125,7 +126,7 @@ class World:
         self.transition_speed = self.max_night_alpha/TRANSITION_DUR
 
         self.range_x = int(WIDTH/self.bg_sizes[0])+1
-        self.range_y = (int(HEIGHT/self.bg_sizes[1])+1)-3
+        self.range_y = (int(HEIGHT/self.bg_sizes[1])+1)-2
 
         self.keys = ["Keys:","Walk: 'A' & 'D'","Jump: 'SPACE'","Pause: 'ESC'","This Menu: 'F3'","Destroy/Attack: 'MOUSE_LEFT'","Place: 'MOUSE_RIGHT'","Item Interaction: 'R'","Open Inventory: 'E'","Drop Items: 'Q'"]
 
@@ -136,6 +137,7 @@ class World:
             self.player.inventory_open = True
             self.player.inventory.move_inventory(1)
             self.crafting_open = True
+            self.crafting_system.refresh_correct_items()
 
     def close_crafting(self):
         self.crafting_open = False
@@ -257,6 +259,7 @@ class World:
                 self.moon_x_pos = other["moon_x"]
                 self.alpha = other["alpha"]
                 self.is_in_transition = other["in_trans"]
+                self.night_tint.set_alpha(self.alpha)
             self.player.load_data(self.id)
         except:
             self.save_data()
@@ -493,11 +496,11 @@ class World:
 
         return chunk_data
 
-    def draw_block(self,block,structure=False):
+    def draw_block(self,block,structure=False,collider=True):
         self.screen.blit(self.assets[block["id"]][block["frame"]],(block["pos"][0]*BLOCK_SIZE-self.scroll.x,block["pos"][1]*BLOCK_SIZE-self.scroll.y))
         if block["collider"] == True:
             rect = pygame.Rect(block["pos"][0]*BLOCK_SIZE-self.scroll.x,block["pos"][1]*BLOCK_SIZE-self.scroll.y,BLOCK_SIZE,BLOCK_SIZE)
-            self.rect_colliders.append([rect,block["unique"]])
+            self.rect_colliders.append([rect,block["unique"],collider])
             if structure: 
                 if rect in list(list(zip(*self.free_pos_rects))[0]):
                     self.free_pos_rects.remove([rect,block["pos"]]) 
@@ -531,7 +534,7 @@ class World:
                 continue
             if structure[0]["pos"][0]*BLOCK_SIZE-self.scroll.x > 0-self.structure_render_offset and structure[0]["pos"][0]*BLOCK_SIZE-self.scroll.x < WIDTH+self.structure_render_offset and structure[0]["pos"][1]*BLOCK_SIZE-self.scroll.y > 0-self.structure_render_offset and structure[0]["pos"][1]*BLOCK_SIZE-self.scroll.y < HEIGHT+self.structure_render_offset*2:
                 for block in structure:
-                    self.draw_block(block,True)
+                    self.draw_block(block,True,False)
 
     def render_drops(self):
         if self.drops:
@@ -636,6 +639,9 @@ class World:
         mouse = pygame.mouse.get_pressed()
         self.render_drops()
 
+        # player
+        self.player.update(self.rect_colliders,dt,mouse)
+
         if not self.is_dead:
             self.input()
             if not self.is_paused:
@@ -647,13 +653,10 @@ class World:
                     self.combat_system.update(mouse)
                 else:
                     if self.crafting_open:
-                        self.crafting_system.update()
+                        self.crafting_system.update(mouse)
                         self.crafting_system.draw()
             else:
                 self.last_milli = pygame.time.get_ticks()
-            
-        # player
-        self.player.update(self.rect_colliders,dt,mouse)
 
         # refresh
         self.rect_colliders.clear()
