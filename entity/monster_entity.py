@@ -76,6 +76,9 @@ class MonsterEntity:
         self.is_damaging = False
         self.start_an = 0
 
+        self.last_check = 0
+        self.check_cooldown = 0.85*1000
+
     def damage(self, damage):
         self.health -= damage
         self.is_damaging = True
@@ -121,65 +124,66 @@ class MonsterEntity:
                 self.is_standing = False
         if obstacles:
             for obstacle in obstacles:
-                obs = obstacle[0]
-                r = self.rect.inflate(0, self.inf_height*2)
-                inf_y = r.inflate(-self.width+10, 2)
-                inf_x = r.inflate(2,-self.height/3)
-                if abs(obs.x-self.rect.x) <= BLOCK_SIZE*3 and abs(obs.y-self.rect.y) <= BLOCK_SIZE*3:
-                    near_blocks += 1
-                    if r.colliderect(obs):
-                        if self.gravity >= 0:
-                            if r.bottom > obs.top:
-                                if (r.bottom < obs.centery) or (self.rect.left > obs.left and self.rect.right < obs.right):
-                                    if self.rect.left < obs.right - 5 or self.rect.right > obs.left + 5:
-                                        self.rect.bottom = obs.top-self.inf_height
-                                        self.is_standing = True
-                                        self.gravity = 0
-                                        self.can_jump = True
-                                        if self.first_time_land:
-                                            self.first_time_land = False
-                                            blocks_fell = (
-                                                (self.pixel_fell)/BLOCK_SIZE)-SAFE_BLOCKS_NUM
-                                            if int(blocks_fell) > 0:
-                                                self.damage(int(blocks_fell))
-                                            self.pixel_fell = 0
-                        elif self.gravity < 0:
-                            if r.top < obs.bottom and r.top > obs.centery+15:
-                                self.rect.top = obs.bottom+self.inf_height
-                                self.is_standing = False
-                                self.gravity = 0
-                        if self.direction == 1:
-                            if 0 < (obs.left+15)-(self.rect.right-15) < BLOCK_SIZE//2:
-                                if self.rect.right > obs.left:
-                                    self.rect.right = obs.left
-                                    self.can_move_d = False
-                                    self.can_attack = False
-                                    if self.can_jump:
-                                        self.jump()
-                                    if r.bottom < obs.centery:
-                                        self.rect.bottom = obs.top-self.inf_height-3
-                        elif self.direction == -1:
-                            if 0 < (self.rect.left+15)-(obs.right-15) < BLOCK_SIZE//2:
-                                if self.rect.left < obs.right:
-                                    self.rect.left = obs.right
-                                    self.can_move_a = False
-                                    self.can_attack = False
-                                    if self.can_jump:
-                                        self.jump()
-                                    if r.bottom < obs.centery:
-                                        self.rect.bottom = obs.top-self.inf_height-3
-                                    
-                    else:
-                        if not inf_y.colliderect(obs):
-                            not_collided += 1
-                        if not inf_x.colliderect(obs):
+                if obstacle[2]:
+                    obs = obstacle[0]
+                    r = self.rect.inflate(0, self.inf_height*2)
+                    inf_y = r.inflate(-self.width+10, 2)
+                    inf_x = r.inflate(2,-self.height/3)
+                    if abs(obs.x-self.rect.x) <= BLOCK_SIZE*3 and abs(obs.y-self.rect.y) <= BLOCK_SIZE*3:
+                        near_blocks += 1
+                        if r.colliderect(obs):
+                            if self.gravity >= 0:
+                                if r.bottom > obs.top:
+                                    if (r.bottom < obs.centery) or (self.rect.left > obs.left and self.rect.right < obs.right):
+                                        if self.rect.left < obs.right - 5 or self.rect.right > obs.left + 5:
+                                            self.rect.bottom = obs.top-self.inf_height
+                                            self.is_standing = True
+                                            self.gravity = 0
+                                            self.can_jump = True
+                                            if self.first_time_land:
+                                                self.first_time_land = False
+                                                blocks_fell = (
+                                                    (self.pixel_fell)/BLOCK_SIZE)-SAFE_BLOCKS_NUM
+                                                if int(blocks_fell) > 0:
+                                                    self.damage(int(blocks_fell))
+                                                self.pixel_fell = 0
+                            elif self.gravity < 0:
+                                if r.top < obs.bottom and r.top > obs.centery+15:
+                                    self.rect.top = obs.bottom+self.inf_height
+                                    self.is_standing = False
+                                    self.gravity = 0
                             if self.direction == 1:
-                                not_call_r += 1
+                                if 0 < (obs.left+15)-(self.rect.right-15) < BLOCK_SIZE//2:
+                                    if self.rect.right > obs.left:
+                                        self.rect.right = obs.left
+                                        self.can_move_d = False
+                                        self.can_attack = False
+                                        if self.can_jump:
+                                            self.jump()
+                                        if r.bottom < obs.centery:
+                                            self.rect.bottom = obs.top-self.inf_height-3
                             elif self.direction == -1:
-                                not_call_l += 1
+                                if 0 < (self.rect.left+15)-(obs.right-15) < BLOCK_SIZE//2:
+                                    if self.rect.left < obs.right:
+                                        self.rect.left = obs.right
+                                        self.can_move_a = False
+                                        self.can_attack = False
+                                        if self.can_jump:
+                                            self.jump()
+                                        if r.bottom < obs.centery:
+                                            self.rect.bottom = obs.top-self.inf_height-3
+                                        
                         else:
-                            if self.can_jump:
-                                self.jump()
+                            if not inf_y.colliderect(obs):
+                                not_collided += 1
+                            if not inf_x.colliderect(obs):
+                                if self.direction == 1:
+                                    not_call_r += 1
+                                elif self.direction == -1:
+                                    not_call_l += 1
+                            else:
+                                if self.can_jump:
+                                    self.jump()
 
         if not_collided == near_blocks:
             self.is_standing = False
@@ -193,21 +197,23 @@ class MonsterEntity:
 
     def move(self):
         if self.direction != 0:
-            if self.direction == 1 and self.can_move_d:
-                self.rect.x += self.x_speed*self.direction
-                self.is_moving = True
-                self.can_attack = True
-            if not self.can_move_d:
-                if self.is_moving:
-                    self.is_moving = False
-            if self.direction == -1 and self.can_move_a:
-                self.rect.x += self.x_speed*self.direction
-                self.is_moving = True
-                self.can_attack = True
-            if not self.can_move_a:
-                if self.is_moving:
-                    self.is_moving = False
+            if self.direction == 1:
+                if self.can_move_d:
+                    self.rect.x += self.x_speed*self.direction
+                    self.is_moving = True
                     self.can_attack = True
+                else:
+                    if self.is_moving:
+                        self.is_moving = False
+            elif self.direction == -1:
+                if self.can_move_a:
+                    self.rect.x += self.x_speed*self.direction
+                    self.is_moving = True
+                    self.can_attack = True
+                else:
+                    if self.is_moving:
+                        self.is_moving = False
+                        self.can_attack = True
         else:
             if self.is_moving:
                 self.is_moving = False
@@ -230,7 +236,9 @@ class MonsterEntity:
         self.obstacles_collisions(obstacles)
         self.fall()
         self.move()
-        self.target_player()
+        if pygame.time.get_ticks()-self.last_check >= self.check_cooldown:
+            self.target_player()
+            self.last_check = pygame.time.get_ticks()
 
     def target_player(self):
         if abs(self.rect.centery-self.get_p_rect().centery) <= entities_data[self.type]["target_range"]*BLOCK_SIZE:

@@ -103,7 +103,6 @@ while True:
     fill_window((0,180,255))
 
     game.run(dt)
-    #debug(int(clock.get_fps()))
 
     pygame.display.update()
     clock.tick(FPS)

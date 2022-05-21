@@ -334,6 +334,8 @@ class Player():
             self.inventory_open = not self.inventory_open
             self.can_open_inventory = False
             if self.inventory_open == False:
+                if self.hotbar.get_selected().empty == False:
+                    self.change_selected_item(self.hotbar.get_selected().item.__copy__())
                 if self.inventory.y_offset != 0:
                     self.inventory.move_inventory(-1)
                 self.close_crafting()
@@ -357,6 +359,8 @@ class Player():
                 self.inventory.add_item(self.inventory.get_free_pos_by_id(drop.item.id,drop.item.type),drop.item,drop.quantity)
                 if self.inventory_open:
                     self.refresh_crafting()
+                if self.hotbar.get_selected().empty == False:
+                    self.change_selected_item(self.hotbar.get_selected().item.__copy__())
                 return True
         return False
 

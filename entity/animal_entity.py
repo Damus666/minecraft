@@ -97,41 +97,42 @@ class AnimalEntity:
                 self.is_standing = False
         if obstacles:
             for obstacle in obstacles:
-                obs = obstacle[0]
-                r = self.rect.inflate(self.inf_width*2, self.inf_height*2)
-                inf_y = r.inflate(-self.width+10, 2)
-                if abs(obs.x-self.rect.x) <= BLOCK_SIZE*3 and abs(obs.y-self.rect.y) <= BLOCK_SIZE*3:
-                    near_blocks += 1
-                    if r.colliderect(obs):
-                        if self.gravity >= 0:
-                            if r.bottom > obs.top:
-                                if (r.bottom < obs.centery) or (self.rect.left > obs.left and self.rect.right < obs.right):
-                                    if self.rect.left < obs.right - 5 or self.rect.right > obs.left + 5:
-                                        self.rect.bottom = obs.top-self.inf_height
-                                        self.is_standing = True
-                                        self.gravity = 0
-                                        if self.first_time_land:
-                                            self.first_time_land = False
-                                            blocks_fell = (
-                                                (self.pixel_fell)/BLOCK_SIZE)-SAFE_BLOCKS_NUM
-                                            if int(blocks_fell) > 0:
-                                                self.damage(int(blocks_fell))
-                                            self.pixel_fell = 0
-                        if self.direction == 1:
-                            if 0 < (obs.left+15)-(self.rect.right-15) < BLOCK_SIZE//2:
-                                if self.rect.right > obs.left:
-                                    self.rect.right = obs.left
-                                    self.direction = choice([0, -1])
-                                    self.flip_image()
-                        elif self.direction == -1:
-                            if 0 < (self.rect.left+15)-(obs.right-15) < BLOCK_SIZE//2:
-                                if self.rect.left < obs.right:
-                                    self.rect.left = obs.right
-                                    self.direction = choice([0, 1])
-                                    self.flip_image()
-                    else:
-                        if not inf_y.colliderect(obs):
-                            not_collided += 1
+                if obstacle[2]:
+                    obs = obstacle[0]
+                    r = self.rect.inflate(self.inf_width*2, self.inf_height*2)
+                    inf_y = r.inflate(-self.width+10, 2)
+                    if abs(obs.x-self.rect.x) <= BLOCK_SIZE*3 and abs(obs.y-self.rect.y) <= BLOCK_SIZE*3:
+                        near_blocks += 1
+                        if r.colliderect(obs):
+                            if self.gravity >= 0:
+                                if r.bottom > obs.top:
+                                    if (r.bottom < obs.centery) or (self.rect.left > obs.left and self.rect.right < obs.right):
+                                        if self.rect.left < obs.right - 5 or self.rect.right > obs.left + 5:
+                                            self.rect.bottom = obs.top-self.inf_height
+                                            self.is_standing = True
+                                            self.gravity = 0
+                                            if self.first_time_land:
+                                                self.first_time_land = False
+                                                blocks_fell = (
+                                                    (self.pixel_fell)/BLOCK_SIZE)-SAFE_BLOCKS_NUM
+                                                if int(blocks_fell) > 0:
+                                                    self.damage(int(blocks_fell))
+                                                self.pixel_fell = 0
+                            if self.direction == 1:
+                                if 0 < (obs.left+15)-(self.rect.right-15) < BLOCK_SIZE//2:
+                                    if self.rect.right > obs.left:
+                                        self.rect.right = obs.left
+                                        self.direction = choice([0, -1])
+                                        self.flip_image()
+                            elif self.direction == -1:
+                                if 0 < (self.rect.left+15)-(obs.right-15) < BLOCK_SIZE//2:
+                                    if self.rect.left < obs.right:
+                                        self.rect.left = obs.right
+                                        self.direction = choice([0, 1])
+                                        self.flip_image()
+                        else:
+                            if not inf_y.colliderect(obs):
+                                not_collided += 1
 
         if not_collided == near_blocks:
             self.is_standing = False

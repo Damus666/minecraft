@@ -84,6 +84,8 @@ class RecipeCard:
             color = "red"
             if r["has"] >= r["need"]:
                 color = "white"
+            if self.has_needed:
+                color = "green"
             new_img = self.font.render(str(r["has"])+"/"+str(r["need"]),True,color)
             r["text"] = new_img
 
