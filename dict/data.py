@@ -17,6 +17,10 @@ block_ids = {
     "leaves":7,
     "crafting":8,
     "planks":9,
+    "red_bricks":10,
+    "grey_bricks":11,
+    "library":12,
+    "furnace":13,
 }
 
 blocks_data = {
@@ -64,10 +68,31 @@ blocks_data = {
                                 "tool_required":tool_types["axe"],
                                 "mine_cooldown":0.85*1000,
                                 "max_cooldown":1.5,},
+
+    block_ids["red_bricks"]:        {"name":"red_bricks",
+                                "tool_required":tool_types["picaxe"],
+                                "mine_cooldown":1.2*1000,
+                                "max_cooldown":8,},
+
+    block_ids["grey_bricks"]:        {"name":"dark_bricks",
+                                "tool_required":tool_types["picaxe"],
+                                "mine_cooldown":1.5*1000,
+                                "max_cooldown":8,},
+
+    block_ids["library"]:        {"name":"bookshelf",
+                                "tool_required":tool_types["axe"],
+                                "mine_cooldown":1.0*1000,
+                                "max_cooldown":1.5,},
+
+    block_ids["furnace"]:        {"name":"furnace",
+                                "tool_required":tool_types["picaxe"],
+                                "mine_cooldown":1.3*1000,
+                                "max_cooldown":8,},
 }
 
 frames = {
-    block_ids["grass"]: 3,
+    block_ids["grass"]: 4,
+    block_ids["furnace"]:2,
 }
 
 tools_data = {

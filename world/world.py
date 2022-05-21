@@ -27,7 +27,7 @@ class World:
         self.id = id
         self.can_press = True
 
-        self.x_range = int(WIDTH/(BLOCK_SIZE*CHUNK_SIZE))+2
+        self.x_range = int(WIDTH/(BLOCK_SIZE*CHUNK_SIZE))+3
         self.y_range = int(HEIGHT/(BLOCK_SIZE*CHUNK_SIZE))+3
 
         self.scroll = pygame.Vector2((0,0))
@@ -273,11 +273,11 @@ class World:
                 json.dump({"structures":self.structures_data},s_file)
             with open(name+FILE_NAMES["block"],"w") as b_file:
                 json.dump({"blocks":self.player_blocks},b_file)
-            drop_dict = {"drops":[{"pos":(drop.rect.centerx-self.scroll.x,drop.rect.centery-20-self.scroll.y),"offset":drop.offset,"quantity":drop.quantity,"item":{"id":drop.item.id,"type":drop.item.type,"is_stackable":drop.item.is_stackable}} for drop in self.drops]}
+            drop_dict = {"drops":[{"pos":(drop.rect.centerx,drop.rect.centery-20),"offset":drop.offset,"quantity":drop.quantity,"item":{"id":drop.item.id,"type":drop.item.type,"is_stackable":drop.item.is_stackable}} for drop in self.drops]}
             with open(name+FILE_NAMES["drop"],"w") as d_file:
                 json.dump(drop_dict,d_file)
 
-            entity_dict = {"animals":[{"pos":(e.rect.centerx-self.scroll.x,e.rect.centery-20-self.scroll.y),"type":e.type,"health":e.health,"p_f":e.pixel_fell} for e in self.animal_entities],"monsters":[{"pos":(e.rect.centerx-self.scroll.x,e.rect.centery-20-self.scroll.y),"type":e.type,"health":e.health,"p_f":e.pixel_fell} for e in self.monster_entities]}
+            entity_dict = {"animals":[{"pos":(e.rect.centerx,e.rect.centery-20),"type":e.type,"health":e.health,"p_f":e.pixel_fell} for e in self.animal_entities],"monsters":[{"pos":(e.rect.centerx,e.rect.centery-20),"type":e.type,"health":e.health,"p_f":e.pixel_fell} for e in self.monster_entities]}
             with open(name+FILE_NAMES["entity"],"w") as e_file:
                 json.dump(entity_dict,e_file)
 
@@ -593,11 +593,11 @@ class World:
     def draw_bg(self):
         for i in range(self.range_x):
             draw_image(self.bg_img_2,(i*self.bg_sizes[0],0-self.bg_sizes[1]/2.5))
-            draw_image(self.bg_img_1,(i*self.bg_sizes[0],self.bg_sizes[1]-self.bg_sizes[1]/2.5))
-            draw_image(self.bg_img_0,(i*self.bg_sizes[0],self.bg_sizes[1]*2-self.bg_sizes[1]/2.5))
+            draw_image(self.bg_img_1,(i*self.bg_sizes[0],self.bg_sizes[1]-self.bg_sizes[1]/2.5-1))
+            draw_image(self.bg_img_0,(i*self.bg_sizes[0],self.bg_sizes[1]*2-self.bg_sizes[1]/2.5-2))
             if self.range_y > 0:
                 for o in range(self.range_y):
-                    draw_image(self.bg_img_0,(i*self.bg_sizes[0],self.bg_sizes[1]*(o+2)-self.bg_sizes[1]/2.5))
+                    draw_image(self.bg_img_0,(i*self.bg_sizes[0],self.bg_sizes[1]*(o+2)-self.bg_sizes[1]/2.5-2))
 
     def draw(self):
         self.draw_bg()

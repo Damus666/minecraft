@@ -21,18 +21,19 @@ class Drop:
         not_coll = 0
         if rects:
             for r in rects:
-                rect = r[0]
-                if abs(rect.x-self.rect.x) <= BLOCK_SIZE and abs(rect.y-self.rect.y) <= BLOCK_SIZE:
-                    near += 1
-                    if self.rect.colliderect(rect):
-                        if self.first_time:
-                            self.offset = self.rect.centerx - rect.centerx
-                            self.first_time = False
-                        self.rect.bottom = rect.top
-                        self.gravity = 0
-                        self.is_standing = True
-                    if not self.rect.inflate(-ITEM_SIZE/3,2).colliderect(rect):
-                        not_coll += 1
+                if r[2]:
+                    rect = r[0]
+                    if abs(rect.x-self.rect.x) <= BLOCK_SIZE and abs(rect.y-self.rect.y) <= BLOCK_SIZE:
+                        near += 1
+                        if self.rect.colliderect(rect):
+                            if self.first_time:
+                                self.offset = self.rect.centerx - rect.centerx
+                                self.first_time = False
+                            self.rect.bottom = rect.top
+                            self.gravity = 0
+                            self.is_standing = True
+                        if not self.rect.inflate(-ITEM_SIZE/3,2).colliderect(rect):
+                            not_coll += 1
         if not_coll == near:
             self.is_standing = False
 

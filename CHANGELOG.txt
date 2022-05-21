@@ -4,6 +4,17 @@
 - bug fix
 - damage feedback
 - better player animations
-- crafting not working
-
-try to take damage
+- crafting (WOWOWOW)
+- textures
+- performances fix (i hope so)
+- probably something else
+- unknown bugs
+- u are cool
+- if you are sypdev reply with :jeroldfancy:
+- if you are Lylipad i swear i'll use another module instead of pyinstaller the next time
+- i have a special role i'm happy
+- search other features cause i have a little memory
+- hi
+- i have a new bio
+- ok i'll stop
+- bye

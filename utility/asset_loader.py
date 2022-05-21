@@ -5,7 +5,7 @@ from dict.data import block_ids,frames
 def return_assets():
     assets = {}
     for id in block_ids.values():
-        if id == block_ids["grass"]:
+        if id == block_ids["grass"] or id == block_ids["furnace"]:
             assets[id] = load_assets(id,frames[id])
         else:
             assets[id] = list([load_asset(id)])

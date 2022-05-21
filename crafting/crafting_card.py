@@ -1,6 +1,7 @@
 from settings import CRAFTING_CARD_WIDTH,CRAFTING_CARD_HEIGHT, CRAFTING_CARD_OFFSET
 import pygame
 from pygame_helper.pygame_helper import draw_image, get_window_surface, scale_image, load_image
+from dict.data import block_ids
 
 class RecipeCard:
     def __init__(self,type,final_item_id,recipe_list,amount, level=0):
@@ -37,12 +38,17 @@ class RecipeCard:
         self.has_needed = False
         
         if self.type != "tools":
-            self.final_item_img = scale_image(load_image(f"assets/graphics/{self.type}/{self.final_item_id}.png",True),None,self.final_item_img_scale,self.final_item_img_scale)
+            st = str(self.final_item_id)
+            if self.final_item_id == block_ids["furnace"]:
+                st = f"{self.final_item_id}/0"
+            self.final_item_img = scale_image(load_image(f"assets/graphics/{self.type}/{st}.png",True),None,self.final_item_img_scale,self.final_item_img_scale)
         else:
             self.final_item_img = scale_image(load_image(f"assets/graphics/{self.type}/{self.final_item_id}/{self.level}.png",True),None,self.final_item_img_scale,self.final_item_img_scale)
 
         self.final_img_width = self.final_item_img.get_width()
         self.recipes_data = self.load_recipe_images()
+
+        self.amount_txt_img = self.font.render("x"+str(self.amount),True,"white")
 
         self.first_time = True
         self.rect = pygame.Rect(0,0,0,0)
@@ -99,6 +105,7 @@ class RecipeCard:
             draw_image(self.bg,topleft)
 
         draw_image(self.final_item_img,(topleft[0]+self.offset,topleft[1]+self.offset))
+        draw_image(self.amount_txt_img,(topleft[0]+self.offset,topleft[1]+self.offset))
 
         for index,r in enumerate(self.recipes_data):
             draw_image(r["img"],(topleft[0]+self.offset*2+self.final_img_width,topleft[1]+self.offset+index*self.recipe_img_scale+index*self.l_offset))

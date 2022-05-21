@@ -141,14 +141,14 @@ class Inventory:
                         quantity_removed+= 1
                     else:
                         previous = slot.quantity
-                        slot.quantity -= quantity
+                        slot.quantity -= (quantity-quantity_removed)
                         if slot.quantity <= 0:
                             slot.item = None
                             slot.empty = True
                             slot.quantity = 1
                             quantity_removed+= previous
                         else:
-                            quantity_removed += previous-quantity
+                            quantity_removed += (quantity-quantity_removed)
                     slot.refresh_quantity_img()
 
     def get_free_pos_by_id(self,id,type):
