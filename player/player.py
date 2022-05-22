@@ -7,17 +7,18 @@ from inventory.hotbar import Hotbar
 from item.item import ItemInstance
 from player.stats import Statistics
 from dict.data import items_data
+from utility.pixel_calculator import height_calculator, width_calculator, medium_calculator
 
 class Player():
     def __init__(self,start_pos,scrollx,scrolly, assets, add_drop,trigger_death, close_crafting):
 
-        self.height = BLOCK_SIZE*2 * 0.9
+        self.height = BLOCK_SIZE*2 * medium_calculator(0.9)
         self.width = BLOCK_SIZE/2
         self.scroll_x = scrollx
         self.scroll_y = scrolly
         self.is_dead = False
 
-        scale = 0.8
+        scale = medium_calculator(0.8)
         self.head_img_l = scale_image(load_image(f"{GRAPHICS_PATH}player/male/head.png"),scale) 
         self.head_img_r = flip(self.head_img_l,True,False)
         self.head_img = self.head_img_r
@@ -49,9 +50,9 @@ class Player():
         self.sel_item_rect = pygame.Rect(0,0,ITEM_SIZE,ITEM_SIZE)
 
         self.gravity = 0
-        self.jump_speed = 10
+        self.jump_speed = medium_calculator(10,True)#BLOCK_SIZE/(80/10)
 
-        self.x_speed = 8
+        self.x_speed = medium_calculator(8)
         self.direction = 1
 
         self.can_jump = False
@@ -62,6 +63,8 @@ class Player():
         self.can_press = True
 
         self.selected_item = None
+        self.s_i_o_1 = medium_calculator(15)
+        self.s_i_o_2 = medium_calculator(2)
 
         self.assets = assets
         self.add_drop = add_drop
@@ -81,6 +84,10 @@ class Player():
         self.started_moving = False
         self.close_crafting = close_crafting
         self.refresh_crafting = None
+
+        self.o_1 = medium_calculator(10)
+        self.o_2 = medium_calculator(5)
+        self.o_3 = medium_calculator(15)
 
     def save_data(self,id):
         try:
@@ -144,7 +151,7 @@ class Player():
     def give_starter_items(self):
         self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(8,"blocks",True,0,1),1)
     
-    def walk_animation(self):
+    def walk_animation(self,dt):
         if self.is_moving:
             
             if self.right_angle > 0:
@@ -170,12 +177,11 @@ class Player():
             self.left_leg_img = rotate(self.original_leg_img,self.left_angle)
             self.right_leg_img = rotate(self.original_leg_img,self.right_angle)
 
-            self.right_angle += self.v*self.go_right
-            self.left_angle += self.v*self.go_left
+            self.right_angle += self.v*self.go_right*dt
+            self.left_angle += self.v*self.go_left*dt
 
-
-    def custom_draw(self):
-        self.walk_animation()
+    def custom_draw(self,dt):
+        self.walk_animation(dt)
 
         self.head_rect.midbottom = self.rect.midtop
         match self.arm_direction.x:
@@ -328,7 +334,7 @@ class Player():
                 self.stop_player()
 
         if keys[pygame.K_SPACE] and self.can_jump:
-            self.jump()
+            self.jump(dt)
 
         if keys[pygame.K_e] and self.can_open_inventory:
             self.inventory_open = not self.inventory_open
@@ -379,7 +385,7 @@ class Player():
                 if obstacle[2]:
                     obs = obstacle[0]
                     r = self.rect.inflate(0,self.inf_height*2)
-                    inf_y = r.inflate(-self.width+10,2)
+                    inf_y = r.inflate(-self.width+self.o_1,2)
                     inf_x = r.inflate(2,-self.height/3)
                     if abs(obs.x-self.rect.x) <= BLOCK_SIZE*4 and abs(obs.y-self.rect.y) <= BLOCK_SIZE*4:
                         near_blocks += 1
@@ -387,7 +393,7 @@ class Player():
                             if self.gravity >= 0:
                                 if r.bottom > obs.top:
                                     if (r.bottom < obs.centery) or (self.rect.left > obs.left and self.rect.right < obs.right):
-                                        if self.rect.left < obs.right -5 or self.rect.right > obs.left + 5:
+                                        if self.rect.left < obs.right -self.o_2 or self.rect.right > obs.left + self.o_2:
                                             self.rect.bottom = obs.top-self.inf_height
                                             self.is_standing = True
                                             self.gravity = 0
@@ -405,14 +411,14 @@ class Player():
                                     self.gravity = 0
                             #if self.is_moving:
                             if self.direction == 1:
-                                if 0 < (obs.left+15)-(self.rect.right-15) < BLOCK_SIZE//2:
+                                if 0 < (obs.left+self.o_3)-(self.rect.right-self.o_3) < BLOCK_SIZE//2:
                                     if self.rect.right > obs.left:
                                         self.can_move_d = False
                                         self.rect.right = obs.left
                                         if r.bottom < obs.centery:
                                             self.rect.bottom = obs.top-self.inf_height-3
                             elif self.direction == -1:
-                                if 0 < (self.rect.left+15)-(obs.right-15)< BLOCK_SIZE//2 :
+                                if 0 < (self.rect.left+self.o_3)-(obs.right-self.o_3)< BLOCK_SIZE//2 :
                                     if self.rect.left < obs.right:
                                         self.can_move_a = False
                                         self.rect.left = obs.right
@@ -439,7 +445,7 @@ class Player():
         self.rect.x += self.x_speed*self.direction*dt
         self.is_moving = True
 
-    def jump(self):
+    def jump(self,dt):
         self.gravity-=self.jump_speed
         self.can_jump = False
 
@@ -466,14 +472,14 @@ class Player():
             
             if self.direction == 1:
                 if self.arm_direction.x == 1:
-                    self.sel_item_rect.bottomleft = (self.right_arm_rect.right-15,self.right_arm_rect.bottom-2)
+                    self.sel_item_rect.bottomleft = (self.right_arm_rect.right-self.s_i_o_1,self.right_arm_rect.bottom-self.s_i_o_2)
                 else:
-                    self.sel_item_rect.bottomleft = (self.right_arm_rect.left+15,self.right_arm_rect.bottom-2)
+                    self.sel_item_rect.bottomleft = (self.right_arm_rect.left+self.s_i_o_1,self.right_arm_rect.bottom-self.s_i_o_2)
             else:
                 if self.arm_direction.x == -1:
-                    self.sel_item_rect.bottomright = (self.right_arm_rect.left+15,self.right_arm_rect.bottom-2)
+                    self.sel_item_rect.bottomright = (self.right_arm_rect.left+self.s_i_o_1,self.right_arm_rect.bottom-self.s_i_o_2)
                 else:
-                    self.sel_item_rect.bottomright = (self.right_arm_rect.right-15,self.right_arm_rect.bottom-2)
+                    self.sel_item_rect.bottomright = (self.right_arm_rect.right-self.s_i_o_1,self.right_arm_rect.bottom-self.s_i_o_2)
             draw_image(self.selected_item.image,self.sel_item_rect)
 
     def update(self,obstacles,dt,mouse):

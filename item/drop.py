@@ -37,11 +37,11 @@ class Drop:
         if not_coll == near:
             self.is_standing = False
 
-    def fall(self):
+    def fall(self,dt):
         self.gravity+=GRAVITY_CONSTANT/2
-        self.rect.y += self.gravity
+        self.rect.y += self.gravity*dt
 
-    def update(self,rects):
+    def update(self,rects,dt):
         self.collisions(rects)
         if not self.is_standing:
-            self.fall()
+            self.fall(dt)

@@ -17,6 +17,7 @@ from utility.custom_button import CustomButton
 import psutil,os,time, json
 from entity.entities import PorcupineEntity, SkeletonEntity, ZombieEntity
 from crafting.crafting_system import CraftingSystem
+from utility.pixel_calculator import width_calculator,height_calculator, medium_calculator
 
 class World:
     def __init__(self, screen,id,exit,get_fps,c_folder):
@@ -34,9 +35,9 @@ class World:
 
         self.assets = return_assets()
 
-        self.f3_font = pygame.font.Font("assets/fonts/regular.ttf",30)
-        self.f3_offset = 35
-        self.f3_spacing = 10
+        self.f3_font = pygame.font.Font("assets/fonts/regular.ttf",height_calculator(30,True))
+        self.f3_offset = medium_calculator(35)
+        self.f3_spacing = height_calculator(10)
         self.is_f3 = False
         ex = self.f3_font.render("CAPS",True,"white")
         self.f3_height = ex.get_height()
@@ -49,17 +50,19 @@ class World:
         self.red_tint = pygame.Surface((WIDTH,HEIGHT))
         self.red_tint.fill("red")
         self.red_tint.set_alpha(50)
-        self.death_font = pygame.font.Font("assets/fonts/regular.ttf",60)
-        self.button_font = pygame.font.Font("assets/fonts/regular.ttf",30)
+        self.death_font = pygame.font.Font("assets/fonts/regular.ttf",medium_calculator(60,True))
+        self.button_font = pygame.font.Font("assets/fonts/regular.ttf",medium_calculator(30,True))
         self.death_img = self.death_font.render("You Died!",True,"white")
         self.death_img_2 = self.death_font.render("You Died!",True,(60,60,60))
         self.death_rect = self.death_img.get_rect(midbottom = (WIDTH//2,HEIGHT//2-self.death_img.get_height()))
         self.pause_img = self.button_font.render("Pause",True,(220,220,220))
         self.pause_img_2 = self.button_font.render("Pause",True,(60,60,60))
+        self.died_offset = medium_calculator(5)
+        self.pause_offset = medium_calculator(3)
         self.pause_rect = self.pause_img.get_rect(midbottom = (WIDTH//2,HEIGHT//2-self.pause_img.get_height()))
-        self.respawn_button = CustomButton((0,0),(WIDTH//2,HEIGHT//2+50),f"{GRAPHICS_PATH}gui/buttons/empty_button.png",2.5,self.button_font,"Respawn")
-        self.resume_button = CustomButton((0,0),(WIDTH//2,HEIGHT//2+50),f"{GRAPHICS_PATH}gui/buttons/empty_button.png",2.5,self.button_font,"Resume")
-        self.exit_button = CustomButton((0,0),(WIDTH//2,HEIGHT//2+150),f"{GRAPHICS_PATH}gui/buttons/empty_button.png",2.5,self.button_font,"Exit")
+        self.respawn_button = CustomButton((0,0),(WIDTH//2,HEIGHT//2+height_calculator(50)),f"{GRAPHICS_PATH}gui/buttons/empty_button.png",medium_calculator(2.5),self.button_font,"Respawn")
+        self.resume_button = CustomButton((0,0),(WIDTH//2,HEIGHT//2+height_calculator(50)),f"{GRAPHICS_PATH}gui/buttons/empty_button.png",medium_calculator(2.5),self.button_font,"Resume")
+        self.exit_button = CustomButton((0,0),(WIDTH//2,HEIGHT//2+height_calculator(150)),f"{GRAPHICS_PATH}gui/buttons/empty_button.png",medium_calculator(2.5),self.button_font,"Exit")
 
         self.rect_colliders = []
         self.chunk_colliders = []
@@ -100,16 +103,17 @@ class World:
 
         self.infos = {"fps":60,"pos":(0,0),"selected":"", "time":self.seconds,"last_save":self.last_save,"render":0}
         self.extra_infos = {"ram":0,"cpu":0}
+        self.extra_offset = width_calculator(500)
 
         self.process = os.getpid()
         self.python = psutil.Process(self.process)
 
         self.loaded_entities = 0
 
-        self.sun_img = scale_image(load_image(f"{GRAPHICS_PATH}other/sun.png"),0.8)
-        self.moon_img = scale_image(load_image(f"{GRAPHICS_PATH}other/moon.png"),0.8)
-        self.celestial_height = 200
-        self.celestial_default_left = -100
+        self.sun_img = scale_image(load_image(f"{GRAPHICS_PATH}other/sun.png"),width_calculator(0.8))
+        self.moon_img = scale_image(load_image(f"{GRAPHICS_PATH}other/moon.png"),width_calculator(0.8))
+        self.celestial_height = height_calculator(200)
+        self.celestial_default_left = -width_calculator(100)
         self.sun_x_pos = self.celestial_default_left
         self.moon_x_pos = self.celestial_default_left
         self.is_day = True
@@ -129,6 +133,7 @@ class World:
         self.range_y = (int(HEIGHT/self.bg_sizes[1])+1)-2
 
         self.keys = ["Keys:","Walk: 'A' & 'D'","Jump: 'SPACE'","Pause: 'ESC'","This Menu: 'F3'","Destroy/Attack: 'MOUSE_LEFT'","Place: 'MOUSE_RIGHT'","Item Interaction: 'R'","Open Inventory: 'E'","Drop Items: 'Q'"]
+        self.index_offset = height_calculator(4,True)
 
         self.load_data()
 
@@ -148,7 +153,6 @@ class World:
 
     def spawn_monsters(self):
         for chunk in self.world_data.values():
-            c = False
             for block in chunk:
                 if block["id"] == block_ids["grassblock"]:
                     m_name = choice(MONSTERS)
@@ -162,9 +166,7 @@ class World:
                             case "skeleton":
                                 s = SkeletonEntity(pos,m_name,self.add_drop,self.delete_entity,self.player.get_rect,self.player.statistics.damage_player)
                                 self.monster_entities.append(s)
-                    c = True
-            if c:
-                continue
+                    break
 
     def draw_day_night(self):
         if self.night_tint.get_alpha() > 0:
@@ -325,10 +327,10 @@ class World:
             self.draw_info(0,index,self.infos[info])
 
         for index,info in enumerate(self.extra_infos.keys()):
-            self.draw_info(WIDTH-500,index,self.extra_infos[info])
+            self.draw_info(WIDTH-self.extra_offset,index,self.extra_infos[info])
 
         for index, info in enumerate(self.keys):
-            self.draw_info(0,index+10,info)
+            self.draw_info(0,index+6+self.index_offset,info)
 
     def draw_info(self,x,y_order,text):
         img = self.f3_font.render(str(text),True,"white")
@@ -400,28 +402,28 @@ class World:
         return self.rect_colliders
 
     def scroll_x(self,dt):
-        self.scroll.x += self.player.x_speed*self.player.direction#*dt
+        self.scroll.x += self.player.x_speed*self.player.direction*round(dt)
         if self.drops:
             for drop in self.drops:
-                drop.rect.x -= self.player.x_speed*self.player.direction#*dt
+                drop.rect.x -= self.player.x_speed*self.player.direction*round(dt)
         if self.animal_entities:
             for e in self.animal_entities:
-                e.rect.x -= self.player.x_speed*self.player.direction
+                e.rect.x -= self.player.x_speed*self.player.direction*round(dt)
         if self.monster_entities:
             for m in self.monster_entities:
-                m.rect.x -= self.player.x_speed*self.player.direction
+                m.rect.x -= self.player.x_speed*self.player.direction*round(dt)
 
     def scroll_y(self,dt):
-        self.scroll.y += self.player.gravity#*dt
+        self.scroll.y += self.player.gravity*round(dt)
         if self.drops:
             for drop in self.drops:
-                drop.rect.y -= self.player.gravity#*dt
+                drop.rect.y -= self.player.gravity*round(dt)
         if self.animal_entities:
             for e in self.animal_entities:
-                e.rect.y -= self.player.gravity
+                e.rect.y -= self.player.gravity*round(dt)
         if self.monster_entities:
             for m in self.monster_entities:
-                m.rect.y -= self.player.gravity
+                m.rect.y -= self.player.gravity*round(dt)
 
     def generate_chunk(self,x,y):
         has_tree = False
@@ -536,7 +538,7 @@ class World:
                 for block in structure:
                     self.draw_block(block,True,False)
 
-    def render_drops(self):
+    def render_drops(self,dt):
         if self.drops:
             for drop in self.drops:
                 if drop.rect.right > 0-BLOCK_SIZE and drop.rect.left < WIDTH+BLOCK_SIZE and drop.rect.bottom > 0-BLOCK_SIZE and drop.rect.top < HEIGHT+BLOCK_SIZE:
@@ -544,17 +546,17 @@ class World:
                         if self.player.drop_collision(drop):
                             self.drops.remove(drop)
                     drop.draw()
-                    drop.update(self.rect_colliders)
+                    drop.update(self.rect_colliders,dt)
                     self.loaded_entities += 1
 
-    def render_entities(self):
+    def render_entities(self,dt):
         if self.animal_entities:
             for e in self.animal_entities:
                 if e.rect.right > 0-BLOCK_SIZE*3 and e.rect.left < WIDTH+BLOCK_SIZE*3 and e.rect.bottom > 0-BLOCK_SIZE*3 and e.rect.top < HEIGHT+BLOCK_SIZE*3:
                     e.draw()
                     if not self.is_dead and not self.is_paused:
-                        e.walk_animation()
-                        e.update(self.rect_colliders)
+                        e.walk_animation(dt)
+                        e.update(self.rect_colliders,dt)
                     self.loaded_entities += 1
         if self.alpha > 0:
             if self.monster_entities:
@@ -562,13 +564,13 @@ class World:
                     if m.rect.right > 0-BLOCK_SIZE*3 and m.rect.left < WIDTH+BLOCK_SIZE*3 and m.rect.bottom > 0-BLOCK_SIZE*3 and m.rect.top < HEIGHT+BLOCK_SIZE*3:
                         m.draw()
                         if not self.is_dead and not self.is_paused:
-                            m.walk_animation()
-                            m.update(self.rect_colliders)
+                            m.walk_animation(dt)
+                            m.update(self.rect_colliders,dt)
                         self.loaded_entities += 1
 
     def death_actions(self):
         draw_image(self.red_tint,(0,0))
-        draw_image(self.death_img_2,(self.death_rect.topleft[0]+5,self.death_rect.topleft[1]+5))
+        draw_image(self.death_img_2,(self.death_rect.topleft[0]+self.died_offset,self.death_rect.topleft[1]+self.died_offset))
         draw_image(self.death_img,self.death_rect)
         
         if self.respawn_button.draw_check():
@@ -576,7 +578,7 @@ class World:
             self.is_dead = False
 
     def pause_actions(self):
-        draw_image(self.pause_img_2,(self.pause_rect.topleft[0]+3,self.pause_rect.topleft[1]+3))
+        draw_image(self.pause_img_2,(self.pause_rect.topleft[0]+self.pause_offset,self.pause_rect.topleft[1]+self.pause_offset))
         draw_image(self.pause_img,self.pause_rect)
         
         if self.resume_button.draw_check():
@@ -599,7 +601,7 @@ class World:
                 for o in range(self.range_y):
                     draw_image(self.bg_img_0,(i*self.bg_sizes[0],self.bg_sizes[1]*(o+2)-self.bg_sizes[1]/2.5-2))
 
-    def draw(self):
+    def draw(self,dt):
         self.draw_bg()
         self.draw_day_night()
         # player
@@ -608,9 +610,9 @@ class World:
         self.render_structures()
         
         self.render_player_blocks()
-        self.render_entities()
+        self.render_entities(dt)
         if not self.is_dead:
-            self.player.custom_draw()
+            self.player.custom_draw(dt)
 
         if self.is_f3:
             self.draw_f3_infos()
@@ -637,7 +639,7 @@ class World:
 
     def update(self,dt):
         mouse = pygame.mouse.get_pressed()
-        self.render_drops()
+        self.render_drops(dt)
 
         # player
         self.player.update(self.rect_colliders,dt,mouse)

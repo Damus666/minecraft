@@ -20,7 +20,7 @@ class SkeletonEntity(MonsterEntity):
         
         self.drops = [{"id":items_ids["bone"],"type":"items","chances":100,"quantity":1,"more":[50,1]}]
 
-    def walk_animation(self):
+    def walk_animation(self,dt):
         if self.is_moving:
             
             if self.right_angle > 0:
@@ -46,8 +46,8 @@ class SkeletonEntity(MonsterEntity):
             self.right_arm = rotate(self.ori_arm_img,self.right_angle)
             self.left_arm = rotate(self.ori_arm_img,self.left_angle)
 
-            self.right_angle += self.v*self.go_right
-            self.left_angle += self.v*self.go_left
+            self.right_angle += self.v*self.go_right*dt
+            self.left_angle += self.v*self.go_left*dt
 
     def draw(self):
 
@@ -127,7 +127,7 @@ class ZombieEntity(MonsterEntity):
             self.right_arm = rotate(self.ori_arm_img,-90)
             self.side = -1
 
-    def walk_animation(self):
+    def walk_animation(self,dt):
         if self.is_moving:
             
             if self.right_angle > 0:
@@ -148,8 +148,8 @@ class ZombieEntity(MonsterEntity):
             self.left_leg = rotate(self.ori_leg_img,self.left_angle)
             self.right_leg = rotate(self.ori_leg_img,self.right_angle)
 
-            self.right_angle += self.v*self.go_right
-            self.left_angle += self.v*self.go_left
+            self.right_angle += self.v*self.go_right*dt
+            self.left_angle += self.v*self.go_left*dt
 
     def draw(self):
 

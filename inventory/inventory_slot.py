@@ -1,7 +1,9 @@
 from pygame_helper.helper_graphics import draw_image, get_window_surface
 import pygame
 
-quantity_font = pygame.font.Font("assets/fonts/regular.ttf",16)
+from utility.pixel_calculator import height_calculator
+
+quantity_font = pygame.font.Font("assets/fonts/regular.ttf",height_calculator(16,True))
 
 class InventorySlot:
     def __init__(self):

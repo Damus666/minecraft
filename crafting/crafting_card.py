@@ -1,12 +1,13 @@
-from settings import CRAFTING_CARD_WIDTH,CRAFTING_CARD_HEIGHT, CRAFTING_CARD_OFFSET
+from settings import CRAFTING_CARD_WIDTH,CRAFTING_CARD_HEIGHT, CRAFTING_CARD_OFFSET, GRAPHICS_PATH, OUTLINE_COLOR,COMPLETE_OUTLINE_COLOR,BG_COLOR,BG_COLOR_COMPLETE
 import pygame
 from pygame_helper.pygame_helper import draw_image, get_window_surface, scale_image, load_image
 from dict.data import block_ids
+from utility.pixel_calculator import  medium_calculator, height_calculator
 
 class RecipeCard:
     def __init__(self,type,final_item_id,recipe_list,amount, level=0):
 
-        self.font = pygame.font.Font("assets/fonts/regular.ttf",20)
+        self.font = pygame.font.Font("assets/fonts/regular.ttf",height_calculator(20,True))
 
         self.type = type 
         self.final_item_id = final_item_id
@@ -19,10 +20,10 @@ class RecipeCard:
         self.offset = CRAFTING_CARD_OFFSET
         self.l_offset = self.offset/1.2
 
-        self.outline_color = (200,200,200)
-        self.complete_outline_color = "white"
-        self.bg_color = (30,30,30)
-        self.bg_has_color = (100,100,100)
+        self.outline_color = OUTLINE_COLOR
+        self.complete_outline_color = COMPLETE_OUTLINE_COLOR
+        self.bg_color = BG_COLOR
+        self.bg_has_color = BG_COLOR_COMPLETE
 
         self.bg = pygame.Surface((CRAFTING_CARD_WIDTH,CRAFTING_CARD_HEIGHT))
         self.bg_has = pygame.Surface((CRAFTING_CARD_WIDTH,CRAFTING_CARD_HEIGHT))
@@ -41,9 +42,9 @@ class RecipeCard:
             st = str(self.final_item_id)
             if self.final_item_id == block_ids["furnace"]:
                 st = f"{self.final_item_id}/0"
-            self.final_item_img = scale_image(load_image(f"assets/graphics/{self.type}/{st}.png",True),None,self.final_item_img_scale,self.final_item_img_scale)
+            self.final_item_img = scale_image(load_image(f"{GRAPHICS_PATH}{self.type}/{st}.png",True),None,self.final_item_img_scale,self.final_item_img_scale)
         else:
-            self.final_item_img = scale_image(load_image(f"assets/graphics/{self.type}/{self.final_item_id}/{self.level}.png",True),None,self.final_item_img_scale,self.final_item_img_scale)
+            self.final_item_img = scale_image(load_image(f"{GRAPHICS_PATH}{self.type}/{self.final_item_id}/{self.level}.png",True),None,self.final_item_img_scale,self.final_item_img_scale)
 
         self.final_img_width = self.final_item_img.get_width()
         self.recipes_data = self.load_recipe_images()
@@ -53,12 +54,15 @@ class RecipeCard:
         self.first_time = True
         self.rect = pygame.Rect(0,0,0,0)
 
+        self.outline_size = medium_calculator(3,True)
+        self.b_radius = medium_calculator(5,True)
+
     def load_recipe_images(self):
         recipes_list = []
         for recipe in self.recipe_list:
             type = recipe["item"]["type"]
             id = recipe["item"]["id"]
-            img = scale_image(load_image(f"assets/graphics/{type}/{id}.png",True),None,self.recipe_img_scale,self.recipe_img_scale)
+            img = scale_image(load_image(f"{GRAPHICS_PATH}{type}/{id}.png",True),None,self.recipe_img_scale,self.recipe_img_scale)
             need = recipe["quantity"]
             has = 0
             text_img = self.font.render(str(has)+"/"+str(need),True,"white")
@@ -112,6 +116,6 @@ class RecipeCard:
             draw_image(r["text"],(topleft[0]+self.offset*2+self.final_img_width+self.recipe_img_scale+self.l_offset,topleft[1]+self.offset+index*self.recipe_img_scale+index*self.l_offset))
 
         if not self.has_needed:
-            pygame.draw.rect(get_window_surface(),self.outline_color,self.rect,3,5)
+            pygame.draw.rect(get_window_surface(),self.outline_color,self.rect,self.outline_size,self.b_radius)
         else:
-            pygame.draw.rect(get_window_surface(),self.complete_outline_color,self.rect,3,5)
+            pygame.draw.rect(get_window_surface(),self.complete_outline_color,self.rect,self.outline_size,self.b_radius)

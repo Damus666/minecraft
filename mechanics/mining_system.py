@@ -188,7 +188,7 @@ class MiningSystem:
                 else:
                     self.animate()
                     if pygame.time.get_ticks()-self.start_pressing >= self.cooldown:
-                        self.add_drop((self.block["pos"][0]*BLOCK_SIZE-self.get_scroll().x+BLOCK_SIZE/2+randint(0,BLOCK_SIZE/4)*choice([1,-1]),self.block["pos"][1]*BLOCK_SIZE-self.get_scroll().y+BLOCK_SIZE/2),ItemInstance(self.block["id"],"blocks",True))
+                        self.add_drop((self.block["pos"][0]*BLOCK_SIZE-self.get_scroll().x+BLOCK_SIZE/2+randint(0,BLOCK_SIZE//4)*choice([1,-1]),self.block["pos"][1]*BLOCK_SIZE-self.get_scroll().y+BLOCK_SIZE/2),ItemInstance(self.block["id"],"blocks",True))
                         if not self.is_structure and not self.is_block:
                             self.remove_blocks()
                         else:

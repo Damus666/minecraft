@@ -4,26 +4,27 @@ from crafting.crafting_card import RecipeCard
 from item.item import ItemInstance
 from settings import  CRAFTING_CARD_WIDTH
 from utility.custom_button import CustomButton
+from utility.pixel_calculator import height_calculator, width_calculator, medium_calculator
 
 class CraftingSystem:
     def __init__(self,left_pos,width,inv_bottom,get_inventory_slots,add_item,get_free_pos,remove_item):
         
-        self.left = left_pos- CRAFTING_CARD_WIDTH-25
-        self.width = width+CRAFTING_CARD_WIDTH*2+50
-        self.top = inv_bottom+110
+        self.left = left_pos- CRAFTING_CARD_WIDTH-width_calculator(25)
+        self.width = width+CRAFTING_CARD_WIDTH*2+width_calculator(50)
+        self.top = inv_bottom+height_calculator(110)
 
         self.get_inv_slots = get_inventory_slots
         self.add_item = add_item
         self.get_free_pos = get_free_pos
         self.remove_item = remove_item
 
-        self.offset = 20
+        self.offset = medium_calculator(20)
         self.can_click = True
 
-        self.button_size = 50
-        self.blocks_button = CustomButton((0,0),(self.left+self.width/2,self.top-60),"assets/graphics/gui/buttons/blocks.png",None,None,None,"white",self.button_size,self.button_size,True)
-        self.items_button = CustomButton((0,0),(self.left+self.width/2-self.button_size-10,self.top-60),"assets/graphics/gui/buttons/items.png",None,None,None,"white",self.button_size,self.button_size,True)
-        self.tools_button = CustomButton((0,0),(self.left+self.width/2+self.button_size+10,self.top-60),"assets/graphics/gui/buttons/tools.png",None,None,None,"white",self.button_size,self.button_size,True)
+        self.button_size = width_calculator(50)
+        self.blocks_button = CustomButton((0,0),(self.left+self.width/2,self.top-height_calculator(60)),"assets/graphics/gui/buttons/blocks.png",None,None,None,"white",self.button_size,self.button_size,True)
+        self.items_button = CustomButton((0,0),(self.left+self.width/2-self.button_size-10,self.top-height_calculator(60)),"assets/graphics/gui/buttons/items.png",None,None,None,"white",self.button_size,self.button_size,True)
+        self.tools_button = CustomButton((0,0),(self.left+self.width/2+self.button_size+10,self.top-height_calculator(60)),"assets/graphics/gui/buttons/tools.png",None,None,None,"white",self.button_size,self.button_size,True)
 
         self.sections = ["blocks","items","tools"]
         self.selected_section = 1

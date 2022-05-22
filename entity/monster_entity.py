@@ -6,12 +6,13 @@ from dict.data import entities_data, items_ids
 from random import  randint
 from pygame.transform import flip
 import pygame
+from utility.pixel_calculator import width_calculator, height_calculator, medium_calculator
 
 
 class MonsterEntity:
     def __init__(self, start_pos, type, add_drop,delete_entity,get_p_rect,damage_player,h=None,p_f=0):
 
-        scale = 0.8
+        scale = medium_calculator(0.8)
         self.type = type
         self.body_left = scale_image(load_image(
             f"{GRAPHICS_PATH}entities/{type}/body.png", True), scale)
@@ -47,7 +48,7 @@ class MonsterEntity:
         self.pixel_fell = p_f
         self.direction = -1
         self.can_jump = True
-        self.jump_speed = 10
+        self.jump_speed = BLOCK_SIZE/(80/10)
 
         self.get_p_rect = get_p_rect
         self.damage_player = damage_player
@@ -79,6 +80,10 @@ class MonsterEntity:
         self.last_check = 0
         self.check_cooldown = 0.85*1000
 
+        self.o_1 = medium_calculator(10)
+        self.o_2 = medium_calculator(5)
+        self.o_3 = medium_calculator(15)
+
     def damage(self, damage):
         self.health -= damage
         self.is_damaging = True
@@ -108,10 +113,9 @@ class MonsterEntity:
             self.body_img = self.body_right
             self.head_img = self.head_right
 
-    def fall(self):
-        if not self.is_standing:
-            self.gravity += GRAVITY_CONSTANT
-            self.rect.y += self.gravity
+    def fall(self,dt):
+        self.gravity += GRAVITY_CONSTANT
+        self.rect.y += self.gravity*dt
 
     def obstacles_collisions(self, obstacles):
         not_collided = 0
@@ -127,7 +131,7 @@ class MonsterEntity:
                 if obstacle[2]:
                     obs = obstacle[0]
                     r = self.rect.inflate(0, self.inf_height*2)
-                    inf_y = r.inflate(-self.width+10, 2)
+                    inf_y = r.inflate(-self.width+self.o_1, 2)
                     inf_x = r.inflate(2,-self.height/3)
                     if abs(obs.x-self.rect.x) <= BLOCK_SIZE*3 and abs(obs.y-self.rect.y) <= BLOCK_SIZE*3:
                         near_blocks += 1
@@ -135,7 +139,7 @@ class MonsterEntity:
                             if self.gravity >= 0:
                                 if r.bottom > obs.top:
                                     if (r.bottom < obs.centery) or (self.rect.left > obs.left and self.rect.right < obs.right):
-                                        if self.rect.left < obs.right - 5 or self.rect.right > obs.left + 5:
+                                        if self.rect.left < obs.right - self.o_2 or self.rect.right > obs.left + self.o_2:
                                             self.rect.bottom = obs.top-self.inf_height
                                             self.is_standing = True
                                             self.gravity = 0
@@ -153,7 +157,7 @@ class MonsterEntity:
                                     self.is_standing = False
                                     self.gravity = 0
                             if self.direction == 1:
-                                if 0 < (obs.left+15)-(self.rect.right-15) < BLOCK_SIZE//2:
+                                if 0 < (obs.left+self.o_3)-(self.rect.right-self.o_3) < BLOCK_SIZE//2:
                                     if self.rect.right > obs.left:
                                         self.rect.right = obs.left
                                         self.can_move_d = False
@@ -163,7 +167,7 @@ class MonsterEntity:
                                         if r.bottom < obs.centery:
                                             self.rect.bottom = obs.top-self.inf_height-3
                             elif self.direction == -1:
-                                if 0 < (self.rect.left+15)-(obs.right-15) < BLOCK_SIZE//2:
+                                if 0 < (self.rect.left+self.o_3)-(obs.right-self.o_3) < BLOCK_SIZE//2:
                                     if self.rect.left < obs.right:
                                         self.rect.left = obs.right
                                         self.can_move_a = False
@@ -195,11 +199,11 @@ class MonsterEntity:
         if not_call_r == near_blocks:
             self.can_move_d = True
 
-    def move(self):
+    def move(self,dt):
         if self.direction != 0:
             if self.direction == 1:
                 if self.can_move_d:
-                    self.rect.x += self.x_speed*self.direction
+                    self.rect.x += self.x_speed*self.direction*dt
                     self.is_moving = True
                     self.can_attack = True
                 else:
@@ -207,7 +211,7 @@ class MonsterEntity:
                         self.is_moving = False
             elif self.direction == -1:
                 if self.can_move_a:
-                    self.rect.x += self.x_speed*self.direction
+                    self.rect.x += self.x_speed*self.direction*dt
                     self.is_moving = True
                     self.can_attack = True
                 else:
@@ -232,10 +236,11 @@ class MonsterEntity:
     def draw_body(self):
         draw_image(self.body_img, self.rect)
 
-    def update(self, obstacles):
+    def update(self, obstacles, dt):
         self.obstacles_collisions(obstacles)
-        self.fall()
-        self.move()
+        if not self.is_standing:
+            self.fall(dt)
+        self.move(dt)
         if pygame.time.get_ticks()-self.last_check >= self.check_cooldown:
             self.target_player()
             self.last_check = pygame.time.get_ticks()
@@ -275,5 +280,5 @@ class MonsterEntity:
     def draw(self):
         """override"""
 
-    def walk_animation(self):
+    def walk_animation(self,dt):
         """override"""

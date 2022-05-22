@@ -5,12 +5,13 @@ from settings import GRAPHICS_PATH, GRAVITY_CONSTANT, BLOCK_SIZE, MOB_DAMAGE_COO
 from dict.data import entities_data, items_ids
 from random import choice, randint
 from pygame.transform import flip
+from utility.pixel_calculator import width_calculator, height_calculator, medium_calculator
 
 
 class AnimalEntity:
     def __init__(self, start_pos, type, add_drop,delete_entity,h=None,p_f=0):
 
-        scale = 0.8
+        scale = medium_calculator(0.8)
         self.type = type
         self.ori_body_image_l = scale_image(load_image(
             f"{GRAPHICS_PATH}entities/{type}/body.png", True), scale)
@@ -50,6 +51,10 @@ class AnimalEntity:
         self.is_damaging = False
         self.start_an = 0
 
+        self.o_1 = medium_calculator(10)
+        self.o_2 = medium_calculator(5)
+        self.o_3 = medium_calculator(15)
+
     def damage(self, damage):
         self.health -= damage
         self.is_damaging = True
@@ -83,10 +88,9 @@ class AnimalEntity:
         else:
             self.body_img = self.ori_body_image_r
 
-    def fall(self):
-        if not self.is_standing:
-            self.gravity += GRAVITY_CONSTANT
-            self.rect.y += self.gravity
+    def fall(self,dt):
+        self.gravity += GRAVITY_CONSTANT
+        self.rect.y += self.gravity*dt
 
     def obstacles_collisions(self, obstacles):
         not_collided = 0
@@ -100,14 +104,14 @@ class AnimalEntity:
                 if obstacle[2]:
                     obs = obstacle[0]
                     r = self.rect.inflate(self.inf_width*2, self.inf_height*2)
-                    inf_y = r.inflate(-self.width+10, 2)
+                    inf_y = r.inflate(-self.width+self.o_1, 2)
                     if abs(obs.x-self.rect.x) <= BLOCK_SIZE*3 and abs(obs.y-self.rect.y) <= BLOCK_SIZE*3:
                         near_blocks += 1
                         if r.colliderect(obs):
                             if self.gravity >= 0:
                                 if r.bottom > obs.top:
                                     if (r.bottom < obs.centery) or (self.rect.left > obs.left and self.rect.right < obs.right):
-                                        if self.rect.left < obs.right - 5 or self.rect.right > obs.left + 5:
+                                        if self.rect.left < obs.right - self.o_2 or self.rect.right > obs.left + self.o_2:
                                             self.rect.bottom = obs.top-self.inf_height
                                             self.is_standing = True
                                             self.gravity = 0
@@ -119,13 +123,13 @@ class AnimalEntity:
                                                     self.damage(int(blocks_fell))
                                                 self.pixel_fell = 0
                             if self.direction == 1:
-                                if 0 < (obs.left+15)-(self.rect.right-15) < BLOCK_SIZE//2:
+                                if 0 < (obs.left+self.o_3)-(self.rect.right-self.o_3) < BLOCK_SIZE//2:
                                     if self.rect.right > obs.left:
                                         self.rect.right = obs.left
                                         self.direction = choice([0, -1])
                                         self.flip_image()
                             elif self.direction == -1:
-                                if 0 < (self.rect.left+15)-(obs.right-15) < BLOCK_SIZE//2:
+                                if 0 < (self.rect.left+self.o_3)-(obs.right-self.o_3) < BLOCK_SIZE//2:
                                     if self.rect.left < obs.right:
                                         self.rect.left = obs.right
                                         self.direction = choice([0, 1])
@@ -150,9 +154,9 @@ class AnimalEntity:
             if flip:
                 self.flip_image()
 
-    def move(self):
+    def move(self,dt):
         if self.direction != 0:
-            self.rect.x += self.x_speed*self.direction
+            self.rect.x += self.x_speed*self.direction*dt
             if not self.is_moving:
                 self.is_moving = True
         else:
@@ -162,14 +166,15 @@ class AnimalEntity:
     def draw_body(self):
         draw_image(self.body_img, self.rect)
 
-    def update(self, obstacles):
+    def update(self, obstacles, dt):
         self.obstacles_collisions(obstacles)
-        self.fall()
         self.change_dir()
-        self.move()
+        self.move(dt)
+        if not self.is_standing:
+            self.fall(dt)
 
     def draw(self):
         """override"""
 
-    def walk_animation(self):
+    def walk_animation(self,dt):
         """override"""

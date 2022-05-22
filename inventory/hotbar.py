@@ -1,7 +1,9 @@
-from settings import ITEM_SIZE, SLOT_COLOR, WIDTH,HEIGHT, SLOT_OFFSET_H
+from settings import BG_COLOR, BG_COLOR_COMPLETE, ITEM_SIZE, SLOT_COLOR, WIDTH,HEIGHT, SLOT_OFFSET_H
 from pygame_helper.helper_graphics import draw_image, get_window_surface
 from inventory.inventory_slot import InventorySlot
 import pygame
+
+from utility.pixel_calculator import height_calculator, width_calculator, medium_calculator
 
 class Hotbar:
     def __init__(self,columns, get_first_line, change_s_item):
@@ -9,18 +11,23 @@ class Hotbar:
         self.slots = {}
         self.slot_rects = {}
 
+        self.outline_size_1 = medium_calculator(3,True)
+        self.outline_size_2 = medium_calculator(5,True)
+
+        self.offset_strange = medium_calculator(5)
+
         self.rows = 1
         self.columns = columns
-        self.offset = [(WIDTH//2)-((self.columns*(ITEM_SIZE+SLOT_OFFSET_H)+(SLOT_OFFSET_H*self.columns)))//2,HEIGHT-100]
-        self.s_off = 10
+        self.offset = [(WIDTH//2)-((self.columns*(ITEM_SIZE+SLOT_OFFSET_H)+(SLOT_OFFSET_H*self.columns)))//2,HEIGHT-height_calculator(100)]
+        self.s_off = medium_calculator(10)
         self.selection_index = 0
         self.max_select = 9
 
         self.slot_image = pygame.Surface((ITEM_SIZE+SLOT_OFFSET_H,ITEM_SIZE+SLOT_OFFSET_H))
         self.slot_image_s = pygame.Surface((ITEM_SIZE+SLOT_OFFSET_H+self.s_off/2,ITEM_SIZE+SLOT_OFFSET_H+self.s_off/2))
-        self.slot_image.fill((30,30,30))
+        self.slot_image.fill(BG_COLOR)
         self.slot_image.set_alpha(100)
-        self.slot_image_s.fill((100,100,100))
+        self.slot_image_s.fill(BG_COLOR_COMPLETE)
         self.slot_image_s.set_alpha(100)
 
         self.lenght = self.columns*((ITEM_SIZE+SLOT_OFFSET_H))+(ITEM_SIZE+SLOT_OFFSET_H)*2
@@ -37,6 +44,8 @@ class Hotbar:
 
         self.slots[str(round(self.columns/2-0.1))+";0"].selected = True
         self.selection_index = round(self.columns/2-0.1)
+
+        self.b_radius = medium_calculator(5,True)
 
     def get_selected(self):
         for x in range(self.columns):
@@ -70,10 +79,10 @@ class Hotbar:
                 y_t= (ITEM_SIZE+SLOT_OFFSET_H)*y+self.offset[1]
                 if self.slots[str(x)+";"+str(y)].selected == False:
                     draw_image(self.slot_image,(x_t+SLOT_OFFSET_H*x+2,y_t+SLOT_OFFSET_H*y+2))
-                    pygame.draw.rect(get_window_surface(),(155,155,155),self.slot_rects[str(x)+";"+str(y)],3,5)
+                    pygame.draw.rect(get_window_surface(),(155,155,155),self.slot_rects[str(x)+";"+str(y)],self.outline_size_1,self.b_radius)
                 else:
-                    draw_image(self.slot_image_s,(x_t+SLOT_OFFSET_H*x-self.s_off/2+5,y_t+SLOT_OFFSET_H*y-self.s_off/2+5))
-                    pygame.draw.rect(get_window_surface(),(255,255,255),pygame.Rect(x_t+SLOT_OFFSET_H*x-self.s_off/2,y_t+SLOT_OFFSET_H*y-self.s_off/2,ITEM_SIZE+SLOT_OFFSET_H+self.s_off,ITEM_SIZE+SLOT_OFFSET_H+self.s_off),5,5)
+                    draw_image(self.slot_image_s,(x_t+SLOT_OFFSET_H*x-self.s_off/2+self.offset_strange,y_t+SLOT_OFFSET_H*y-self.s_off/2+self.offset_strange))
+                    pygame.draw.rect(get_window_surface(),(255,255,255),pygame.Rect(x_t+SLOT_OFFSET_H*x-self.s_off/2,y_t+SLOT_OFFSET_H*y-self.s_off/2,ITEM_SIZE+SLOT_OFFSET_H+self.s_off,ITEM_SIZE+SLOT_OFFSET_H+self.s_off),self.outline_size_2,self.b_radius)
                 self.slots[str(x)+";"+str(y)].draw_item(x_t+SLOT_OFFSET_H*x,y_t+SLOT_OFFSET_H*y,SLOT_OFFSET_H)
 
     def refresh(self):

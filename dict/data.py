@@ -1,3 +1,5 @@
+from utility.pixel_calculator import medium_calculator
+
 tool_types = {
     "picaxe":0,
     "axe":1,
@@ -124,15 +126,15 @@ tools_data = {
 entities_data = {
     "porcupine":{"name":"porcupine",
                 "type":"animal",
-                "speed":3,
+                "speed":medium_calculator(3),
                 "health":10,
                 "chances":5},
 
     "zombie":{"name":"zombie",
                 "type":"monster",
-                "speed":3,
+                "speed":medium_calculator(3),
                 "health":20,
-                "chances":3,
+                "chances":10,
                 "target_range":20,
                 "attack_range":1,
                 "attack_damage":1,
@@ -140,9 +142,9 @@ entities_data = {
 
     "skeleton":{"name":"skeleton",
                 "type":"monster",
-                "speed":4,
+                "speed":medium_calculator(4),
                 "health":20,
-                "chances":2,
+                "chances":7,
                 "target_range":30,
                 "attack_range":2,
                 "attack_damage":2,

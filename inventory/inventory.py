@@ -1,10 +1,12 @@
 import json
 import pygame
 from item.item import ItemInstance
-from settings import ITEM_SIZE, SLOT_COLOR, SLOT_OFFSET, WIDTH,HEIGHT, INV_BG_COLOR, STACK_SIZE, BLOCK_SIZE
+from settings import BG_COLOR, ITEM_SIZE, SLOT_COLOR, SLOT_OFFSET, WIDTH,HEIGHT, INV_BG_COLOR, STACK_SIZE, BLOCK_SIZE
 from pygame_helper.helper_graphics import draw_image, get_window_surface
 from inventory.inventory_slot import InventorySlot
 from random import randint,choice
+
+from utility.pixel_calculator import height_calculator, width_calculator, medium_calculator
 
 class Inventory:
     def __init__(self,add_drop,get_p_data ):
@@ -12,14 +14,17 @@ class Inventory:
         self.slots = {}
         self.slot_rects = {}
 
+        self.outline_size = medium_calculator(3,True)
+
         self.rows = 4
         self.columns = 9
         
         self.y_offset = 0
-        self.y_pos_special = -300
+        self.y_pos_special = -height_calculator(300)
+        self.b_radius = medium_calculator(5,True)
 
         self.slot_image = pygame.Surface((ITEM_SIZE+SLOT_OFFSET,ITEM_SIZE+SLOT_OFFSET))
-        self.slot_image.fill((30,30,30))
+        self.slot_image.fill(BG_COLOR)
         self.slot_image.set_alpha(100)
 
         self.bg_tint = pygame.Surface((WIDTH,HEIGHT))
@@ -181,7 +186,7 @@ class Inventory:
                 y_t= (ITEM_SIZE+SLOT_OFFSET)*y+self.offset[1]+self.y_offset
                 #pygame.draw.rect(get_window_surface(),"black",self.slot_rects[str(x)+";"+str(y)],2,5)
                 draw_image(self.slot_image,(x_t+SLOT_OFFSET*x+2,y_t+SLOT_OFFSET*y+2))
-                pygame.draw.rect(get_window_surface(),(200,200,200),self.slot_rects[str(x)+";"+str(y)],3,5)
+                pygame.draw.rect(get_window_surface(),(200,200,200),self.slot_rects[str(x)+";"+str(y)],self.outline_size,self.b_radius)
                 self.slots[str(x)+";"+str(y)].draw_item(x_t+SLOT_OFFSET*x,y_t+SLOT_OFFSET*y,SLOT_OFFSET)
 
     def get_collided_slot(self,posi):
@@ -298,7 +303,7 @@ class Inventory:
             for x in range(self.columns):
                 slot = self.slots[str(x)+";"+str(y)]
                 if not slot.empty:
-                    pos = (self.get_p_data()[0][0] +randint(-BLOCK_SIZE/2,BLOCK_SIZE/2)*choice([-1,1]),self.get_p_data()[0][1])
+                    pos = (self.get_p_data()[0][0] +randint(-BLOCK_SIZE//2,BLOCK_SIZE//2)*choice([-1,1]),self.get_p_data()[0][1])
                     self.add_drop(pos,slot.item,slot.quantity)
 
     def clear(self):

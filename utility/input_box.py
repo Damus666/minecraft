@@ -1,22 +1,26 @@
 import pygame as pg
 from pygame_helper.helper_graphics import draw_image
 
+from utility.pixel_calculator import height_calculator, width_calculator
+
 pg.font.init()
 COLOR_INACTIVE = pg.Color(200,200,200,255)
 COLOR_ACTIVE = pg.Color('white')
 
 class InputBox:
 
-    def __init__(self, x, y, w, h,change_name, text='New World', font=None):
+    def __init__(self, x, y, w, h,change_name, text='New World', font=None,f_s=None):
         self.rect = pg.Rect(x, y, w, h)
         self.color = COLOR_INACTIVE
         self.text = text
         self.font = font
         self.txt_surface = self.font.render(text, True, self.color)
         self.active = False
-        self.width = 500
+        self.width = w
         self.change_name = change_name
-
+        self.max = self.width/f_s
+        self.o_1 = width_calculator(10)
+        self.o_2 = height_calculator(7)
 
     def handle_event(self, event):
         if event.type == pg.MOUSEBUTTONDOWN:
@@ -35,7 +39,7 @@ class InputBox:
                     self.text = self.text[:-1]
                     self.change_name()
                 else:
-                    if not len(self.text) > 25:
+                    if not len(self.text) > self.max:
                         self.text += event.unicode
                         self.change_name()
                 # Re-render the text.
@@ -43,7 +47,7 @@ class InputBox:
 
     def draw(self):
         # Blit the text.
-        draw_image(self.txt_surface, (self.rect.x+10, self.rect.y+7))
+        draw_image(self.txt_surface, (self.rect.x+self.o_1, self.rect.y+self.o_2))
         # Blit the rect.
         #pg.draw.rect(screen, self.color, self.rect, 5)
 

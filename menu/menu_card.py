@@ -4,7 +4,7 @@ from utility.custom_button import CustomButton
 from settings import GRAPHICS_PATH
 
 class MenuCard:
-    def __init__(self,height,width,middle_x,middle_y, id, font, scale, play_world, delete_self):
+    def __init__(self,height,width,middle_x,middle_y, id, font,f_s, scale, play_world, delete_self):
         
         self.world_id = id
         self.font = font
@@ -20,7 +20,7 @@ class MenuCard:
         self.play_button = CustomButton((self.input_pos[0],self.input_pos[1]+self.input_bg_img.get_height()+self.offset),False,f"{GRAPHICS_PATH}gui/buttons/empty_button.png",scale,self.font,"Play")
         self.delet_button = CustomButton((self.input_pos[0],self.card_rect.bottom-self.offset-self.input_bg_img.get_height()),False,f"{GRAPHICS_PATH}gui/buttons/empty_button.png",scale,self.font,"Delete")
 
-        self.input = InputBox(self.input_pos[0],self.input_pos[1],self.input_bg_img.get_width(),self.input_bg_img.get_height(),self.change_name,font=self.font)
+        self.input = InputBox(self.input_pos[0],self.input_pos[1],self.input_bg_img.get_width(),self.input_bg_img.get_height(),self.change_name,font=self.font,f_s=f_s)
 
         self.play_world = play_world
         self.delete_self = delete_self

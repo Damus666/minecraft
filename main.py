@@ -72,7 +72,7 @@ class Game:
     def run(self,dt):
         
         if self.in_game:
-            self.world.draw()
+            self.world.draw(dt)
             self.world.update(dt)
         else:
             self.main_menu.draw_update()
