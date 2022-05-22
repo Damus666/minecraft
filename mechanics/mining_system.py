@@ -41,6 +41,8 @@ class MiningSystem:
         self.cooldown = 0
         self.frame_num = len(self.destroy_images)
 
+        self.tool_start = False
+
     def animate(self):
         
         if pygame.time.get_ticks()-self.start_pressing >= self.frame_speed*self.frame_index:
@@ -77,12 +79,15 @@ class MiningSystem:
                             if self.get_selected().empty == True:
                                 self.cooldown = blocks_data[bl["id"]]["mine_cooldown"]*blocks_data[bl["id"]]["max_cooldown"]
                                 self.frame_speed = self.cooldown // self.frame_num
+                                self.tool_start = False
                                 return True
                             if self.get_selected().item.id == blocks_data[bl["id"]]["tool_required"] and self.get_selected().item.type == "tools":
+                                self.tool_start = self.get_selected().item
                                 self.cooldown = blocks_data[bl["id"]]["mine_cooldown"]
                                 if self.get_selected().item.level > 0:
                                     self.cooldown/= (((self.get_selected().item.level+1)/5)+1)
                             else:
+                                self.tool_start = False
                                 self.cooldown = blocks_data[bl["id"]]["mine_cooldown"]*blocks_data[bl["id"]]["max_cooldown"]
                                 if self.get_selected().item.type == "tools":
                                     if self.get_selected().item.level > 0:
@@ -127,12 +132,15 @@ class MiningSystem:
                             if self.get_selected().empty == True:
                                 self.cooldown = blocks_data[bl["id"]]["mine_cooldown"]*blocks_data[bl["id"]]["max_cooldown"]
                                 self.frame_speed = self.cooldown // self.frame_num
+                                self.tool_start = False
                                 return True
                             if self.get_selected().item.id == blocks_data[bl["id"]]["tool_required"] and self.get_selected().item.type == "tools":
+                                self.tool_start = self.get_selected().item
                                 self.cooldown = blocks_data[bl["id"]]["mine_cooldown"]
                                 if self.get_selected().item.level > 0:
                                     self.cooldown/= (((self.get_selected().item.level+1)/5)+1)
                             else:
+                                self.tool_start = False
                                 self.cooldown = blocks_data[bl["id"]]["mine_cooldown"]*blocks_data[bl["id"]]["max_cooldown"]
                                 if self.get_selected().item.type == "tools":
                                     if self.get_selected().item.level > 0:
@@ -162,6 +170,7 @@ class MiningSystem:
         self.structure = None
         self.cooldown = 0
         self.is_block = False
+        self.tool_start = False
 
     def input(self,mouse):
 
@@ -188,7 +197,15 @@ class MiningSystem:
                 else:
                     self.animate()
                     if pygame.time.get_ticks()-self.start_pressing >= self.cooldown:
-                        self.add_drop((self.block["pos"][0]*BLOCK_SIZE-self.get_scroll().x+BLOCK_SIZE/2+randint(0,BLOCK_SIZE//4)*choice([1,-1]),self.block["pos"][1]*BLOCK_SIZE-self.get_scroll().y+BLOCK_SIZE/2),ItemInstance(self.block["id"],"blocks",True))
+                        
+                        if blocks_data[self.block["id"]]["ignore_tool"] == True:
+                            self.add_drop((self.block["pos"][0]*BLOCK_SIZE-self.get_scroll().x+BLOCK_SIZE/2+randint(0,BLOCK_SIZE//4)*choice([1,-1]),self.block["pos"][1]*BLOCK_SIZE-self.get_scroll().y+BLOCK_SIZE/2),ItemInstance(blocks_data[self.block["id"]]["drop"]["id"],blocks_data[self.block["id"]]["drop"]["type"],True))
+                        else:
+                            if self.tool_start != False:
+                                if blocks_data[self.block["id"]]["tool_required"] == self.tool_start.id:
+                                    if self.tool_start.level >= blocks_data[self.block["id"]]["level_required"]:
+                                        self.add_drop((self.block["pos"][0]*BLOCK_SIZE-self.get_scroll().x+BLOCK_SIZE/2+randint(0,BLOCK_SIZE//4)*choice([1,-1]),self.block["pos"][1]*BLOCK_SIZE-self.get_scroll().y+BLOCK_SIZE/2),ItemInstance(blocks_data[self.block["id"]]["drop"]["id"],blocks_data[self.block["id"]]["drop"]["type"],True))
+
                         if not self.is_structure and not self.is_block:
                             self.remove_blocks()
                         else:
@@ -233,12 +250,15 @@ class MiningSystem:
                             if self.get_selected().empty == True:
                                 self.cooldown = blocks_data[bl["id"]]["mine_cooldown"]*blocks_data[bl["id"]]["max_cooldown"]
                                 self.frame_speed = self.cooldown // self.frame_num
+                                self.tool_start = False
                                 return True
                             if self.get_selected().item.id == blocks_data[bl["id"]]["tool_required"] and self.get_selected().item.type == "tools":
+                                self.tool_start = self.get_selected().item
                                 self.cooldown = blocks_data[bl["id"]]["mine_cooldown"]
                                 if self.get_selected().item.level > 0:
                                     self.cooldown/= (((self.get_selected().item.level+1)/5)+1)
                             else:
+                                self.tool_start = False
                                 self.cooldown = blocks_data[bl["id"]]["mine_cooldown"]*blocks_data[bl["id"]]["max_cooldown"]
                                 if self.get_selected().item.type == "tools":
                                     if self.get_selected().item.level > 0:

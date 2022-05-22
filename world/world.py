@@ -2,22 +2,23 @@ from pygame_helper.pygame_helper import debug
 from mechanics.combat_system import CombatSystem
 from item.item import ItemInstance
 from player.player import Player
-import pygame
+import pygame, json
 from utility.asset_loader import return_assets
 from settings import BLOCK_SIZE, CHUNK_SIZE, ENTITIES, GRAPHICS_PATH, HEIGHT, MONSTERS, WIDTH, FILE_NAMES,W_DATA_F,DAY_DURATION,NIGHT_DURATION,TRANSITION_DUR
 from noise import pnoise1
-from dict.data import block_ids,blocks_data, frames, tools_data,items_data, entities_data
+from dict.data import block_ids, frames, entities_data,ores_data
 from random import randint, choice
+from world.f3_menu import f3Menu
 from world.structures import *
 from mechanics.mining_system import MiningSystem
 from item.drop import Drop
 from mechanics.build_system import BuildSystem
-from pygame_helper.helper_graphics import draw_image, load_image,scale_image
+from pygame_helper.helper_graphics import draw_image
 from utility.custom_button import CustomButton
-import psutil,os,time, json
 from entity.entities import PorcupineEntity, SkeletonEntity, ZombieEntity
 from crafting.crafting_system import CraftingSystem
-from utility.pixel_calculator import width_calculator,height_calculator, medium_calculator
+from utility.pixel_calculator import height_calculator, medium_calculator
+from world.day_night_cycle import DayNightCycle
 
 class World:
     def __init__(self, screen,id,exit,get_fps,c_folder):
@@ -35,17 +36,7 @@ class World:
 
         self.assets = return_assets()
 
-        self.f3_font = pygame.font.Font("assets/fonts/regular.ttf",height_calculator(30,True))
-        self.f3_offset = medium_calculator(35)
-        self.f3_spacing = height_calculator(10)
         self.is_f3 = False
-        ex = self.f3_font.render("CAPS",True,"white")
-        self.f3_height = ex.get_height()
-
-        self.bg_img_0 = load_image("assets/graphics/world_bg/0.png")
-        self.bg_img_1 = load_image("assets/graphics/world_bg/1.png")
-        self.bg_img_2 = load_image("assets/graphics/world_bg/2.png")
-        self.bg_sizes = self.bg_img_0.get_width(), self.bg_img_0.get_height()
 
         self.red_tint = pygame.Surface((WIDTH,HEIGHT))
         self.red_tint.fill("red")
@@ -101,41 +92,17 @@ class World:
         self.last_time = 0
         self.last_save = pygame.time.get_ticks()
 
-        self.infos = {"fps":60,"pos":(0,0),"selected":"", "time":self.seconds,"last_save":self.last_save,"render":0}
-        self.extra_infos = {"ram":0,"cpu":0}
-        self.extra_offset = width_calculator(500)
-
-        self.process = os.getpid()
-        self.python = psutil.Process(self.process)
+        self.day_night_cycle_bg = DayNightCycle(self.kill_monsters,self.spawn_monsters)
 
         self.loaded_entities = 0
 
-        self.sun_img = scale_image(load_image(f"{GRAPHICS_PATH}other/sun.png"),width_calculator(0.8))
-        self.moon_img = scale_image(load_image(f"{GRAPHICS_PATH}other/moon.png"),width_calculator(0.8))
-        self.celestial_height = height_calculator(200)
-        self.celestial_default_left = -width_calculator(100)
-        self.sun_x_pos = self.celestial_default_left
-        self.moon_x_pos = self.celestial_default_left
-        self.is_day = True
-        self.sun_speed = WIDTH/DAY_DURATION
-        self.moon_speed = WIDTH/NIGHT_DURATION
-        self.night_tint = pygame.Surface((WIDTH,HEIGHT))
-        self.night_tint.fill("blue")
-        self.night_tint.set_alpha(0)
-        self.max_night_alpha = 150
-        self.alpha_multiplier = 1
-        self.last_milli = 0
-        self.alpha = 0
-        self.is_in_transition = False
-        self.transition_speed = self.max_night_alpha/TRANSITION_DUR
-
-        self.range_x = int(WIDTH/self.bg_sizes[0])+1
-        self.range_y = (int(HEIGHT/self.bg_sizes[1])+1)-2
-
-        self.keys = ["Keys:","Walk: 'A' & 'D'","Jump: 'SPACE'","Pause: 'ESC'","This Menu: 'F3'","Destroy/Attack: 'MOUSE_LEFT'","Place: 'MOUSE_RIGHT'","Item Interaction: 'R'","Open Inventory: 'E'","Drop Items: 'Q'"]
-        self.index_offset = height_calculator(4,True)
+        self.f3_menu = f3Menu(self.player.hotbar.get_selected,self.player.get_rect,self.get_scroll,self.get_fps)
 
         self.load_data()
+
+    def kill_monsters(self):
+        for m in self.monster_entities:
+            m.die()
 
     def trigger_special_actions(self, action):
         if action == "crafting":
@@ -167,49 +134,6 @@ class World:
                                 s = SkeletonEntity(pos,m_name,self.add_drop,self.delete_entity,self.player.get_rect,self.player.statistics.damage_player)
                                 self.monster_entities.append(s)
                     break
-
-    def draw_day_night(self):
-        if self.night_tint.get_alpha() > 0:
-            draw_image(self.night_tint,(0,0))
-
-        if self.is_day:
-            draw_image(self.sun_img,(self.sun_x_pos,self.celestial_height))
-        else:
-            draw_image(self.moon_img,(self.moon_x_pos,self.celestial_height))
-
-    def transition(self):
-        self.alpha += self.alpha_multiplier*self.transition_speed*(pygame.time.get_ticks()-self.last_milli)
-        if self.alpha <= 0:
-            self.alpha = 0
-            self.is_in_transition = False
-            for m in self.monster_entities:
-                m.die()
-        if self.alpha >= self.max_night_alpha:
-            self.alpha = self.max_night_alpha
-            self.is_in_transition = False
-            self.spawn_monsters()
-        self.night_tint.set_alpha(self.alpha)
-
-    def update_day_night(self,dt):
-        if self.is_in_transition:
-            self.transition()
-
-        if self.is_day:
-            self.sun_x_pos+= self.sun_speed*dt*(pygame.time.get_ticks()-self.last_milli)
-            if self.sun_x_pos > WIDTH+50:
-                self.is_day = False
-                self.sun_x_pos = self.celestial_default_left
-                self.alpha_multiplier = 1
-                self.is_in_transition = True
-        else:
-            self.moon_x_pos += self.moon_speed*dt*(pygame.time.get_ticks()-self.last_milli)
-            if self.moon_x_pos > WIDTH+50:
-                self.is_day = True
-                self.moon_x_pos = self.celestial_default_left
-                self.alpha_multiplier = -1
-                self.is_in_transition = True
-
-        self.last_milli = pygame.time.get_ticks()
 
     def delete_entity(self,e):
         try:
@@ -256,12 +180,12 @@ class World:
                 self.scroll = pygame.Vector2((other["scroll"][0],other["scroll"][1]))
                 self.set_ids(other["structure_b_id"],other["player_b_id"])
                 self.seconds = other["seconds"]
-                self.is_day = other["is_day"]
-                self.sun_x_pos = other["sun_x"]
-                self.moon_x_pos = other["moon_x"]
-                self.alpha = other["alpha"]
-                self.is_in_transition = other["in_trans"]
-                self.night_tint.set_alpha(self.alpha)
+                self.day_night_cycle_bg.is_day = other["is_day"]
+                self.day_night_cycle_bg.sun_x_pos = other["sun_x"]
+                self.day_night_cycle_bg.moon_x_pos = other["moon_x"]
+                self.day_night_cycle_bg.alpha = other["alpha"]
+                self.day_night_cycle_bg.is_in_transition = other["in_trans"]
+                self.day_night_cycle_bg.night_tint.set_alpha(self.day_night_cycle_bg.alpha)
             self.player.load_data(self.id)
         except:
             self.save_data()
@@ -283,62 +207,11 @@ class World:
             with open(name+FILE_NAMES["entity"],"w") as e_file:
                 json.dump(entity_dict,e_file)
 
-            other_dict = {"scroll":[self.scroll.x,self.scroll.y],"structure_b_id":self.structure_b_id,"player_b_id":self.player_block_id,"seconds":self.seconds,"is_day":self.is_day,"sun_x":self.sun_x_pos,"moon_x":self.moon_x_pos,"in_trans":self.is_in_transition,"alpha":self.alpha}
+            other_dict = {"scroll":[self.scroll.x,self.scroll.y],"structure_b_id":self.structure_b_id,"player_b_id":self.player_block_id,"seconds":self.seconds,"is_day":self.day_night_cycle_bg.is_day,"sun_x":self.day_night_cycle_bg.sun_x_pos,"moon_x":self.day_night_cycle_bg.moon_x_pos,"in_trans":self.day_night_cycle_bg.is_in_transition,"alpha":self.day_night_cycle_bg.alpha}
             with open(name+FILE_NAMES["other"],"w") as o_file:
                 json.dump(other_dict,o_file)
             self.player.save_data(self.id)
             self.last_save = pygame.time.get_ticks()
-
-    def get_pos(self):
-        x = ((WIDTH//2+self.player.rect.x)//BLOCK_SIZE)+(self.scroll.x//BLOCK_SIZE)-23
-        y = ((HEIGHT//2-self.player.rect.y)//BLOCK_SIZE)-(self.scroll.y//BLOCK_SIZE)
-        return int(x),int(y)
-
-    def get_memory(self):
-        return "RAM: "+str(round(self.python.memory_info()[0]/1073741824,2))+" GB / "+str(round(psutil.virtual_memory()[0]/1073741824,2))+" GB"
-
-    def get_cpu(self):
-        return "CPU: "+str(round(self.python.cpu_percent()/os.cpu_count(),1))+" %"
-
-    def draw_f3_infos(self):
-
-        self.infos["fps"] = str(int(self.get_fps()))+" FPS"
-        self.infos["pos"] = "X: "+str(self.get_pos()[0])+"  Y: "+str(self.get_pos()[1])
-        self.infos["time"] = "Time Played: "+time.strftime("%H:%M:%S", time.gmtime(self.seconds))
-        self.infos["last_save"] = "Last Save: "+str(int(((pygame.time.get_ticks()-self.last_save)/1000)/60))+" Minutes Ago"
-        self.infos["render"] = "Rendering: "+str(len(self.chunk_colliders))+" Chunks, "+str(len(self.rect_colliders))+" Blocks, "+str(self.loaded_entities+1)+" Entities"
-        try:
-            if self.player.hotbar.get_selected().empty == False:
-                item = self.player.hotbar.get_selected().item
-                if item.type == "blocks":
-                    self.infos["selected"] = "Selected Item: "+blocks_data[item.id]["name"]
-                elif item.type == "items":
-                    self.infos["selected"] = "Selected Item: "+items_data[item.id]["name"]
-                elif item.type == "tools":
-                    self.infos["selected"] = "Selected Item: "+tools_data[item.id][item.level]["name"]
-            else:
-                self.infos["selected"] = "Selected Item: None"
-        except:pass
-
-        self.extra_infos["ram"] = self.get_memory()
-        self.extra_infos["cpu"] = self.get_cpu()
-
-        for index,info in enumerate(self.infos.keys()):
-            self.draw_info(0,index,self.infos[info])
-
-        for index,info in enumerate(self.extra_infos.keys()):
-            self.draw_info(WIDTH-self.extra_offset,index,self.extra_infos[info])
-
-        for index, info in enumerate(self.keys):
-            self.draw_info(0,index+6+self.index_offset,info)
-
-    def draw_info(self,x,y_order,text):
-        img = self.f3_font.render(str(text),True,"white")
-        bg = pygame.Surface((img.get_width()+2.5,img.get_height()+2.5))
-        bg.fill((60,60,60))
-        bg.set_alpha(100)
-        draw_image(bg,(x+self.f3_offset-1.25,self.f3_offset+self.f3_height*y_order+self.f3_spacing*y_order-1.25))
-        draw_image(img,(x+self.f3_offset,self.f3_offset+self.f3_height*y_order+self.f3_spacing*y_order))
 
     def trigger_death(self):
         self.is_dead = True
@@ -436,59 +309,72 @@ class World:
 
         for y_pos in range(CHUNK_SIZE):
             for x_pos in range(CHUNK_SIZE):
-                self.block_heights = {"stone":randint(15,17),"dirt":8,"deepslate":randint(46,54),"bedrock":randint(60,64)}
+                self.block_heights = {"stone":randint(15,17),"dirt":8,"deepslate":randint(46,54),"bedrock":randint(64,70)}
 
                 final_x = x*CHUNK_SIZE+x_pos
                 final_y = y*CHUNK_SIZE+y_pos
-                block_id = -1
-
                 height = int(pnoise1(final_x*self.amplitude_multiplier,repeat=self.repeat_noise) * self.height_multiplier)
+                
+                block_id = -1
                 collider = True
                 frame = 0
+                found_ore = False
+                if randint(0,100) <= 10:
+                    for ore in ores_data.keys():
+                        if final_y in range(ores_data[ore]["range"][0]-height,ores_data[ore]["range"][1]-height):
+                            if randint(0,100) <= ores_data[ore]["chances"]:
+                                block_id = ore
+                                frame = choice([0,1])
+                                found_ore = True
+                if not found_ore:
+                    if final_y >= self.block_heights["bedrock"] - height:
+                        block_id = block_ids["bedrock"]
 
-                if final_y >= self.block_heights["bedrock"] - height:
-                    block_id = block_ids["bedrock"]
-                elif final_y >= self.block_heights["deepslate"] - height:
-                    block_id = block_ids["grimstone"]
-                elif final_y >= self.block_heights["stone"] - height:
-                    block_id = block_ids["stone"]
-                elif final_y > self.block_heights["dirt"] - height:
-                    block_id = block_ids["dirt"]
-                elif final_y == self.block_heights["dirt"]-height:
-                    block_id = block_ids["grassblock"]
-                elif final_y == self.block_heights["dirt"]-height-1:
-                    if randint(0,8) == 4:
-                        block_id = block_ids["grass"]
-                        frame_num = frames[block_ids["grass"]]
-                        frame = randint(0,frame_num-1)
-                        collider = False
-                    else:
-                        if 2 < x_pos < CHUNK_SIZE-2:
-                            if randint(0,10) == 4 and has_tree == False:
-                                tree_data = generate_tree(final_x,final_y,self.structure_b_id)
-                                self.structures_data.append(tree_data[0])
-                                self.structure_b_id = tree_data[1]
-                                has_tree = True
-                    if not has_tree and not has_entity:
-                        if self.is_day:
-                            e_name = choice(ENTITIES)
-                            if randint(0,100) <= entities_data[e_name]["chances"]:
-                                match e_name:
-                                    case "porcupine":
-                                        e = PorcupineEntity((final_x*BLOCK_SIZE-self.scroll.x,final_y*BLOCK_SIZE-self.scroll.y),e_name,self.add_drop,self.delete_entity)
-                                        self.animal_entities.append(e)
-                            has_entity = True
+                    elif final_y >= self.block_heights["deepslate"] - height:
+                        block_id = block_ids["grimstone"]
+
+                    elif final_y >= self.block_heights["stone"] - height:
+                        block_id = block_ids["stone"]
+
+                    elif final_y > self.block_heights["dirt"] - height:
+                        block_id = block_ids["dirt"]
+
+                    elif final_y == self.block_heights["dirt"]-height:
+                        block_id = block_ids["grassblock"]
+
+                    elif final_y == self.block_heights["dirt"]-height-1:
+                        if randint(0,8) == 4:
+                            block_id = block_ids["grass"]
+                            frame_num = frames[block_ids["grass"]]
+                            frame = randint(0,frame_num-1)
+                            collider = False
                         else:
-                            m_name = choice(MONSTERS)
-                            if randint(0,100) <= entities_data[m_name]["chances"]:
-                                pos = (final_x*BLOCK_SIZE-self.scroll.x,final_y*BLOCK_SIZE-self.scroll.y)
-                                match m_name:
-                                    case "zombie":
-                                        z = ZombieEntity(pos,m_name,self.add_drop,self.delete_entity,self.player.get_rect,self.player.statistics.damage_player)
-                                        self.monster_entities.append(z)
-                                    case "skeleton":
-                                        s = SkeletonEntity(pos,m_name,self.add_drop,self.delete_entity,self.player.get_rect,self.player.statistics.damage_player)
-                                        self.monster_entities.append(s)
+                            if 2 < x_pos < CHUNK_SIZE-2:
+                                if randint(0,10) == 4 and has_tree == False:
+                                    tree_data = generate_tree(final_x,final_y,self.structure_b_id)
+                                    self.structures_data.append(tree_data[0])
+                                    self.structure_b_id = tree_data[1]
+                                    has_tree = True
+                        if not has_tree and not has_entity:
+                            if self.day_night_cycle_bg.is_day:
+                                e_name = choice(ENTITIES)
+                                if randint(0,100) <= entities_data[e_name]["chances"]:
+                                    match e_name:
+                                        case "porcupine":
+                                            e = PorcupineEntity((final_x*BLOCK_SIZE-self.scroll.x,final_y*BLOCK_SIZE-self.scroll.y),e_name,self.add_drop,self.delete_entity)
+                                            self.animal_entities.append(e)
+                                has_entity = True
+                            else:
+                                m_name = choice(MONSTERS)
+                                if randint(0,100) <= entities_data[m_name]["chances"]:
+                                    pos = (final_x*BLOCK_SIZE-self.scroll.x,final_y*BLOCK_SIZE-self.scroll.y)
+                                    match m_name:
+                                        case "zombie":
+                                            z = ZombieEntity(pos,m_name,self.add_drop,self.delete_entity,self.player.get_rect,self.player.statistics.damage_player)
+                                            self.monster_entities.append(z)
+                                        case "skeleton":
+                                            s = SkeletonEntity(pos,m_name,self.add_drop,self.delete_entity,self.player.get_rect,self.player.statistics.damage_player)
+                                            self.monster_entities.append(s)
 
                 if block_id != -1:
                     chunk_data.append({"pos":[final_x,final_y],"id":block_id,"collider":collider,"frame":frame,"unique":unique_id})
@@ -558,7 +444,7 @@ class World:
                         e.walk_animation(dt)
                         e.update(self.rect_colliders,dt)
                     self.loaded_entities += 1
-        if self.alpha > 0:
+        if self.day_night_cycle_bg.alpha > 0:
             if self.monster_entities:
                 for m in self.monster_entities:
                     if m.rect.right > 0-BLOCK_SIZE*3 and m.rect.left < WIDTH+BLOCK_SIZE*3 and m.rect.bottom > 0-BLOCK_SIZE*3 and m.rect.top < HEIGHT+BLOCK_SIZE*3:
@@ -592,18 +478,9 @@ class World:
             self.save_data()
             self.exit()
 
-    def draw_bg(self):
-        for i in range(self.range_x):
-            draw_image(self.bg_img_2,(i*self.bg_sizes[0],0-self.bg_sizes[1]/2.5))
-            draw_image(self.bg_img_1,(i*self.bg_sizes[0],self.bg_sizes[1]-self.bg_sizes[1]/2.5-1))
-            draw_image(self.bg_img_0,(i*self.bg_sizes[0],self.bg_sizes[1]*2-self.bg_sizes[1]/2.5-2))
-            if self.range_y > 0:
-                for o in range(self.range_y):
-                    draw_image(self.bg_img_0,(i*self.bg_sizes[0],self.bg_sizes[1]*(o+2)-self.bg_sizes[1]/2.5-2))
-
     def draw(self,dt):
-        self.draw_bg()
-        self.draw_day_night()
+        self.day_night_cycle_bg.draw_bg()
+        self.day_night_cycle_bg.draw_day_night()
         # player
             
         self.render_chunks()
@@ -615,7 +492,7 @@ class World:
             self.player.custom_draw(dt)
 
         if self.is_f3:
-            self.draw_f3_infos()
+            self.f3_menu.draw_f3_infos(self.seconds,self.last_save,self.chunk_colliders,self.rect_colliders,self.loaded_entities)
         self.loaded_entities = 0
         
     def input(self):
@@ -647,7 +524,7 @@ class World:
         if not self.is_dead:
             self.input()
             if not self.is_paused:
-                self.update_day_night(dt)
+                self.day_night_cycle_bg.update_day_night(dt)
                 # mining
                 if not self.player.inventory_open:
                     self.mining_system.update(mouse)

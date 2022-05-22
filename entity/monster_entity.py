@@ -48,7 +48,7 @@ class MonsterEntity:
         self.pixel_fell = p_f
         self.direction = -1
         self.can_jump = True
-        self.jump_speed = BLOCK_SIZE/(80/10)
+        self.jump_speed = medium_calculator(10,True)
 
         self.get_p_rect = get_p_rect
         self.damage_player = damage_player

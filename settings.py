@@ -15,7 +15,7 @@ from utility.pixel_calculator import width_calculator,height_calculator, medium_
 # PIXELS CONSTANTS
 
 BLOCK_SIZE = medium_calculator(80,True)
-CHUNK_SIZE = 8
+CHUNK_SIZE = 4
 ITEM_SIZE = medium_calculator(35)
 SLOT_OFFSET = medium_calculator(16)
 SLOT_OFFSET_H = medium_calculator(16)
