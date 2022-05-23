@@ -6,7 +6,7 @@ from dict.data import blocks_data, block_ids, tool_types
 from random import randint, choice
 
 class MiningSystem:
-    def __init__(self, get_block_rects,get_chunk_rects, get_world_data, edit_chunk_data, get_scroll, get_structures, edit_structures, get_player_pos, get_selected,add_drop, get_player_blocks,remove_player_block,get_player_hunger,c_s_i):
+    def __init__(self, get_block_rects,get_chunk_rects, get_world_data, edit_chunk_data, get_scroll, get_structures, edit_structures, get_player_pos, get_selected,add_drop, get_player_blocks,remove_player_block,get_player_hunger,c_s_i,delete_special):
         
         
         self.first_time_press = True
@@ -33,6 +33,7 @@ class MiningSystem:
         self.remove_player_block = remove_player_block
         self.get_player_hunger = get_player_hunger
         self.c_s_i = c_s_i
+        self.delete_special = delete_special
 
         self.destroy_images = import_images_folder(f"{GRAPHICS_PATH}blocks/destroy_animation",True,None,(BLOCK_SIZE,BLOCK_SIZE))
         self.destroy_image = self.destroy_images[0]
@@ -197,6 +198,9 @@ class MiningSystem:
                 else:
                     self.animate()
                     if pygame.time.get_ticks()-self.start_pressing >= self.cooldown:
+
+                        if self.block["id"] == block_ids["furnace"]:
+                            self.delete_special("furnace",self.block)
                         
                         if blocks_data[self.block["id"]]["ignore_tool"] == True:
                             self.add_drop((self.block["pos"][0]*BLOCK_SIZE-self.get_scroll().x+BLOCK_SIZE/2+randint(0,BLOCK_SIZE//4)*choice([1,-1]),self.block["pos"][1]*BLOCK_SIZE-self.get_scroll().y+BLOCK_SIZE/2),ItemInstance(blocks_data[self.block["id"]]["drop"]["id"],blocks_data[self.block["id"]]["drop"]["type"],True))

@@ -17,7 +17,10 @@ class ItemInstance:
             else:
                 self.durability = 1
         path = str(self.id) if self.type in ["blocks","items"] else str(self.id)+"/"+str(self.level)
-        image = load_image(f"{GRAPHICS_PATH}{type}/{path}.png",True)
+        try:
+            image = load_image(f"{GRAPHICS_PATH}{type}/{path}.png",True)
+        except:
+            image = load_image(f"{GRAPHICS_PATH}{type}/{path}/0.png",True)
         self.image = scale_image(image,None,ITEM_SIZE,ITEM_SIZE)
 
     def __copy__(self):

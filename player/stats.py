@@ -1,6 +1,7 @@
 import pygame
 from settings import MAX_HEALTH, MAX_HUNGER, GRAPHICS_PATH, HEALTH_REGEN_COOLDOWN,ITEM_SIZE,SLOT_OFFSET_H, HUNGER_DECREASE_COOLDOWN,PLAYER_DAMAGE_COOLDOWN,WIDTH,HEIGHT
 from pygame_helper.helper_graphics import draw_image,scale_image,load_image
+from utility.pixel_calculator import medium_calculator
 
 class Statistics:
     def __init__(self,top_hotbar_y,left_hotbar_x,hotbar_lenght,trigger_death):
@@ -10,6 +11,9 @@ class Statistics:
         self.offset = 3
         self.lenght = hotbar_lenght
 
+        self.name_font = pygame.font.Font("assets/fonts/regular.ttf",medium_calculator(25,True))
+        self.name_img = self.name_font.render(" ",True,"white")
+
         self.max_health = MAX_HEALTH
         self.player_health = 20
 
@@ -17,6 +21,9 @@ class Statistics:
         self.player_hunger = self.max_hunger
 
         self.item_size = ((hotbar_lenght-SLOT_OFFSET_H*1.5-ITEM_SIZE*1.5)//2)/(self.max_health//2)
+
+        self.bottom_txt_pos = self.bottom_y-self.offset*3-self.item_size
+        self.name_rect = self.name_img.get_rect(midbottom=(WIDTH//2,self.bottom_txt_pos))
 
         self.half_heart_img = scale_image(load_image(f"{GRAPHICS_PATH}gui/half_heart.png",True),None,self.item_size,self.item_size)
         self.full_heart_img = scale_image(load_image(f"{GRAPHICS_PATH}gui/full_heart.png",True),None,self.item_size,self.item_size)
@@ -40,6 +47,11 @@ class Statistics:
         self.max_hoverlay_alpha = 200
         self.decrease_speed = self.max_hoverlay_alpha/PLAYER_DAMAGE_COOLDOWN
         self.last_ticks = 0
+
+    def change_name(self,string:str):
+        s = string.replace("_"," ").title()
+        self.name_img = self.name_font.render(s,True,"white")
+        self.name_rect = self.name_img.get_rect(midbottom=(WIDTH//2,self.bottom_txt_pos))
 
     def fill_hunger(self,value):
         self.player_hunger += value
@@ -110,3 +122,5 @@ class Statistics:
             draw_image(self.half_hunger_img,(self.left_x+self.lenght+SLOT_OFFSET_H-(self.player_hunger//2)*self.item_size-(self.player_hunger//2)*self.offset-self.offset*2,self.bottom_y-self.offset*2.5-self.item_size))
 
         self.last_ticks = pygame.time.get_ticks()
+
+        draw_image(self.name_img,self.name_rect)

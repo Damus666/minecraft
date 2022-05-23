@@ -27,12 +27,16 @@ block_ids = {
     "iron_ore":15,
     "gold_ore":16,
     "diamond_ore":17,
+    "coal_block":18,
+    "iron_block":19,
+    "gold_block":20,
+    "diamond_block":21,
 }
 
 ores_data = {
     block_ids["coal_ore"]: {
         "range":[20,40],
-        "chances":40,
+        "chances":45,
     },
 
     block_ids["iron_ore"]: {
@@ -66,10 +70,14 @@ items_ids = {
     "gold_ingot":11
 }
 
+smeltables_types = ["food","ore"]
+
 items_data = {
     items_ids["meat"]: {"name":"raw_meat",
                         "type":"food",
-                        "hunger":2,},
+                        "hunger":2,
+                        "result":items_ids["cookedmeat"],
+                        "smelt_cooldown":4*1000,},
 
     items_ids["cookedmeat"]: {"name":"cooked_meat",
                              "type":"food",
@@ -93,14 +101,21 @@ items_data = {
     
     items_ids["coal"]: {"name":"coal",
                              "type":"fuel",
+                             "fuel_points":8,
                              },
 
     items_ids["raw_iron"]: {"name":"raw_iron",
                              "type":"ore",
+                             "fuel":2,
+                             "result":items_ids["iron_ingot"],
+                             "smelt_cooldown":6*1000,
                              },
 
     items_ids["raw_gold"]: {"name":"raw_gold",
                              "type":"ore",
+                             "fuel":3,
+                             "result":items_ids["gold_ingot"],
+                             "smelt_cooldown":8*1000,
                              },
 
     items_ids["diamond"]: {"name":"diamond",
@@ -239,7 +254,34 @@ blocks_data = {
                                 "max_cooldown":8,
                                 "drop":{"id":items_ids["diamond"],"type":"items"},
                                 "ignore_tool":False,},
-}
+
+    block_ids["coal_block"]:        {"name":"coal_block",
+                                "tool_required":tool_types["picaxe"],
+                                "mine_cooldown":1.2*1000,
+                                "max_cooldown":8,
+                                "drop":{"id":block_ids["coal_block"],"type":"blocks"},
+                                "ignore_tool":True,},
+
+    block_ids["iron_block"]:        {"name":"iron_block",
+                                "tool_required":tool_types["picaxe"],
+                                "mine_cooldown":1.3*1000,
+                                "max_cooldown":8,
+                                "drop":{"id":block_ids["iron_block"],"type":"blocks"},
+                                "ignore_tool":True,},
+
+    block_ids["gold_block"]:        {"name":"gold_block",
+                                "tool_required":tool_types["picaxe"],
+                                "mine_cooldown":1.4*1000,
+                                "max_cooldown":8,
+                                "drop":{"id":block_ids["gold_block"],"type":"blocks"},
+                                "ignore_tool":True,},
+
+    block_ids["diamond_block"]:        {"name":"diamond_block",
+                                "tool_required":tool_types["picaxe"],
+                                "mine_cooldown":1.5*1000,
+                                "max_cooldown":8,
+                                "drop":{"id":block_ids["diamond_block"],"type":"blocks"},
+                                "ignore_tool":True,},}
 
 frames = {
     block_ids["grass"]: 4,

@@ -1,10 +1,11 @@
 from pygame_helper.pygame_helper import debug
 from mechanics.combat_system import CombatSystem
 from item.item import ItemInstance
+from mechanics.furnace_system import FurnacesManager
 from player.player import Player
 import pygame, json
 from utility.asset_loader import return_assets
-from settings import BLOCK_SIZE, CHUNK_SIZE, ENTITIES, GRAPHICS_PATH, HEIGHT, MONSTERS, WIDTH, FILE_NAMES,W_DATA_F,DAY_DURATION,NIGHT_DURATION,TRANSITION_DUR
+from settings import BLOCK_SIZE, CHUNK_SIZE, ENTITIES, ENTITY_DESPAWN_RANGE, GRAPHICS_PATH, HEIGHT, MONSTERS, WIDTH, FILE_NAMES,W_DATA_F,DAY_DURATION,NIGHT_DURATION,TRANSITION_DUR
 from noise import pnoise1
 from dict.data import block_ids, frames, entities_data,ores_data
 from random import randint, choice
@@ -60,6 +61,8 @@ class World:
         self.free_pos_rects = []
         self.structure_b_id = CHUNK_SIZE*CHUNK_SIZE+1
         self.player_block_id = -1
+        self.currently_loaded_chunks = []
+        self.before_loaded_chunks = []
 
         self.world_data = {}
         self.structures_data = []
@@ -76,12 +79,16 @@ class World:
         self.height_multiplier = 5
         self.structure_render_offset = 5*BLOCK_SIZE
 
-        self.mining_system = MiningSystem(self.get_block_rects,self.get_chunk_rects,self.get_world_data,self.edit_chunk_data, self.get_scroll, self.get_structures,self.edit_structures, self.get_player_pos,self.player.hotbar.get_selected,self.add_drop,self.get_player_blocks,self.remove_player_block,self.player.statistics.get_hunger,self.player.change_selected_item)
+        self.mining_system = MiningSystem(self.get_block_rects,self.get_chunk_rects,self.get_world_data,self.edit_chunk_data, self.get_scroll, self.get_structures,self.edit_structures, self.get_player_pos,self.player.hotbar.get_selected,self.add_drop,self.get_player_blocks,self.remove_player_block,self.player.statistics.get_hunger,self.player.change_selected_item,self.delete_special_block)
         self.build_system = BuildSystem(self.get_free_pos_rects,self.player.hotbar.get_selected,self.add_block,self.get_current_block_id,self.update_current_block_id,self.player.hotbar.decrease_slot,self.player.get_rect,self.get_player_pos,self.get_player_blocks,self.get_scroll,self.trigger_special_actions)
         self.combat_system = CombatSystem(self.get_entities,self.player.hotbar.get_selected,self.player.get_rect,self.player.change_selected_item)
         self.crafting_system = CraftingSystem(self.player.inventory.slot_rects["0;0"].left,self.player.inventory.inv_sizes[0],self.player.inventory.inv_rect.bottom+self.player.inventory.y_pos_special,self.player.inventory.get_slots,self.player.inventory.add_item,self.player.inventory.get_free_pos_by_id,self.player.inventory.remove_item)
+        self.furnaces_manager = FurnacesManager(self.update_block_frame,self.player.inventory.inv_rect.bottom+self.player.inventory.y_pos_special,self.player.inventory.add_item,self.player.inventory.get_free_pos_by_id,self.get_furnace_open,self.add_drop,self.get_scroll)
+
+        self.player.inventory.place_in_furnace = self.furnaces_manager.place_items_in_furnace
 
         self.crafting_open = False
+        self.furnace_open = False
         self.player.refresh_crafting = self.crafting_system.refresh_correct_items
 
         self.exit = exit
@@ -100,19 +107,41 @@ class World:
 
         self.load_data()
 
+    def get_furnace_open(self):
+        return self.furnace_open
+
+    def update_block_frame(self,unique,frame):
+        for block in self.player_blocks:
+            if block["unique"] == unique:
+                block["frame"] = frame
+                break
+
     def kill_monsters(self):
         for m in self.monster_entities:
             m.die()
 
-    def trigger_special_actions(self, action):
+    def delete_drop(self,drop):
+        self.drops.remove(drop)
+
+    def delete_special_block(self,type,block):
+        if type == "furnace":
+            self.furnaces_manager.delete_furnace(block)
+
+    def trigger_special_actions(self, action, id=0):
         if action == "crafting":
             self.player.inventory_open = True
             self.player.inventory.move_inventory(1)
             self.crafting_open = True
             self.crafting_system.refresh_correct_items()
+        elif action == "furnace":
+            self.player.inventory_open = True
+            self.player.inventory.move_inventory(1)
+            self.furnace_open = True
+            self.furnaces_manager.open_furnace(id)
 
     def close_crafting(self):
         self.crafting_open = False
+        self.furnace_open = False
 
     def set_ids(self,struct,block):
         self.structure_b_id = struct
@@ -248,7 +277,7 @@ class World:
         return self.free_pos_rects
 
     def add_drop(self,pos,item,quantity=1):
-        self.drops.append(Drop(pos,item,quantity))
+        self.drops.append(Drop(pos,item,self.delete_drop,quantity))
 
     def get_player_pos(self):
         return self.player.rect
@@ -349,7 +378,7 @@ class World:
                             frame = randint(0,frame_num-1)
                             collider = False
                         else:
-                            if 2 < x_pos < CHUNK_SIZE-2:
+                            if 1 < x_pos < CHUNK_SIZE-1:
                                 if randint(0,10) == 4 and has_tree == False:
                                     tree_data = generate_tree(final_x,final_y,self.structure_b_id)
                                     self.structures_data.append(tree_data[0])
@@ -396,16 +425,31 @@ class World:
     def render_chunks(self):
         for y in range(self.y_range):
             for x in range(self.x_range):
+                ok_for_entity = False
                 target_x = x - 1 + int(round(self.scroll.x/(CHUNK_SIZE*BLOCK_SIZE)))
                 target_y = y - 1 + int(round(self.scroll.y/(CHUNK_SIZE*BLOCK_SIZE)))
                 target_chunk = str(target_x)+";"+str(target_y)
                 if target_chunk not in self.world_data:
                     self.world_data[target_chunk] = self.generate_chunk(target_x,target_y)
+                    ok_for_entity = False
+                else:
+                    if not target_chunk in self.before_loaded_chunks:
+                        ok_for_entity = True
                 self.chunk_colliders.append([pygame.Rect(self.world_data[target_chunk][0]["pos"][0]*BLOCK_SIZE-self.scroll.x,self.world_data[target_chunk][0]["pos"][1]*BLOCK_SIZE-self.scroll.y,CHUNK_SIZE*BLOCK_SIZE,CHUNK_SIZE*BLOCK_SIZE),target_chunk])
-
+                self.currently_loaded_chunks.append(target_chunk)
                 for block in self.world_data[target_chunk]:
                     if block["id"] >= 0:
                         self.draw_block(block)
+                        if ok_for_entity:
+                            if block["id"] == 1:
+                                if self.day_night_cycle_bg.is_day:
+                                    e_name = choice(ENTITIES)
+                                    if randint(0,100) <= entities_data[e_name]["chances"]/2:
+                                        match e_name:
+                                            case "porcupine":
+                                                e = PorcupineEntity((block["pos"][0]*BLOCK_SIZE-self.scroll.x,block["pos"][1]*BLOCK_SIZE-self.scroll.y),e_name,self.add_drop,self.delete_entity)
+                                                self.animal_entities.append(e)
+                                        ok_for_entity = False
                     elif block["id"] == -1:
                         rect = pygame.Rect(block["pos"][0]*BLOCK_SIZE-self.scroll.x,block["pos"][1]*BLOCK_SIZE-self.scroll.y,BLOCK_SIZE,BLOCK_SIZE)
                         self.free_pos_rects.append([rect,block["pos"]])
@@ -444,6 +488,9 @@ class World:
                         e.walk_animation(dt)
                         e.update(self.rect_colliders,dt)
                     self.loaded_entities += 1
+                else:
+                    if abs(e.rect.x) >= ENTITY_DESPAWN_RANGE:
+                        e.die(False)
         if self.day_night_cycle_bg.alpha > 0:
             if self.monster_entities:
                 for m in self.monster_entities:
@@ -453,6 +500,9 @@ class World:
                             m.walk_animation(dt)
                             m.update(self.rect_colliders,dt)
                         self.loaded_entities += 1
+                    else:
+                        if abs(m.rect.x) >= ENTITY_DESPAWN_RANGE:
+                            m.die(False)
 
     def death_actions(self):
         draw_image(self.red_tint,(0,0))
@@ -525,7 +575,7 @@ class World:
             self.input()
             if not self.is_paused:
                 self.day_night_cycle_bg.update_day_night(dt)
-                # mining
+                self.furnaces_manager.passive_update()
                 if not self.player.inventory_open:
                     self.mining_system.update(mouse)
                     self.build_system.update(mouse)
@@ -534,6 +584,9 @@ class World:
                     if self.crafting_open:
                         self.crafting_system.update(mouse)
                         self.crafting_system.draw()
+                    elif self.furnace_open:
+                        self.furnaces_manager.active_update(mouse)
+                        self.furnaces_manager.draw()
             else:
                 self.last_milli = pygame.time.get_ticks()
 
@@ -541,6 +594,8 @@ class World:
         self.rect_colliders.clear()
         self.chunk_colliders.clear()
         self.free_pos_rects.clear()
+        self.before_loaded_chunks = self.currently_loaded_chunks.copy()
+        self.currently_loaded_chunks.clear()
 
         if self.is_dead:
             self.death_actions()

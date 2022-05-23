@@ -13,7 +13,7 @@ class f3Menu:
         ex = self.f3_font.render("CAPS",True,"white")
         self.f3_height = ex.get_height()
 
-        self.infos = {"fps":60,"pos":(0,0),"selected":"", "time":0,"last_save":0,"render":0}
+        self.infos = {"fps":60,"pos":(0,0), "time":0,"last_save":0,"render":0,"selected":""}
         self.extra_infos = {"ram":0,"cpu":0}
         self.extra_offset = width_calculator(500)
 
@@ -50,11 +50,11 @@ class f3Menu:
             if self.get_selected().empty == False:
                 item = self.get_selected().item
                 if item.type == "blocks":
-                    self.infos["selected"] = "Selected Item: "+blocks_data[item.id]["name"]
+                    self.infos["selected"] = "Selected Item: "+"name: "+blocks_data[item.id]["name"]+f", id: {item.id}, type: blocks, tool required: "+tools_data[blocks_data[item.id]["tool_required"]][blocks_data[item.id].get("level_required") if blocks_data[item.id].get("level_required") else 0]["name"]
                 elif item.type == "items":
-                    self.infos["selected"] = "Selected Item: "+items_data[item.id]["name"]
+                    self.infos["selected"] = "Selected Item: "+items_data[item.id]["name"]+f", id: {item.id}, type: items, subtype: "+items_data[item.id]["type"]
                 elif item.type == "tools":
-                    self.infos["selected"] = "Selected Item: "+tools_data[item.id][item.level]["name"]
+                    self.infos["selected"] = "Selected Item: "+tools_data[item.id][item.level]["name"]+f", id: {item.id}, damage: "+str(tools_data[item.id][item.level]["damage"])+f", durability: {item.durability}"
             else:
                 self.infos["selected"] = "Selected Item: None"
         except:pass

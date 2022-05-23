@@ -45,6 +45,8 @@ class BuildSystem:
                 if rect.collidepoint(pos[0],pos[1]):
                     if block["id"] == block_ids["crafting"]:
                         self.trigger_special_actions("crafting")
+                    if block["id"] == block_ids["furnace"]:
+                        self.trigger_special_actions("furnace",block["unique"])
 
     def input(self,mouse):
         pos = pygame.mouse.get_pos()

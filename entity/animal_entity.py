@@ -5,7 +5,7 @@ from settings import GRAPHICS_PATH, GRAVITY_CONSTANT, BLOCK_SIZE, MOB_DAMAGE_COO
 from dict.data import entities_data, items_ids
 from random import choice, randint
 from pygame.transform import flip
-from utility.pixel_calculator import width_calculator, height_calculator, medium_calculator
+from utility.pixel_calculator import medium_calculator
 
 
 class AnimalEntity:
@@ -69,16 +69,17 @@ class AnimalEntity:
             self.is_damaging = False
         draw_image(self.damage_hoverlay,self.damage_rect)
 
-    def die(self):
-        if self.drops:
-            for d in self.drops:
-                if d["chances"] != 0:
-                    pos = (self.rect.centerx+randint(-self.ori_body_image_l.get_width()//2,self.ori_body_image_l.get_width()//2),self.rect.centery)
-                    if randint(0,100) <= d["chances"]:
-                        self.add_drop(pos,ItemInstance(d["id"],d["type"],True),d["quantity"])
-                        if d["more"][0] != 0:
-                            if randint(0,100) <= d["more"][0]:
-                                self.add_drop(pos,ItemInstance(d["id"],d["type"],True),d["more"][1])
+    def die(self,do_drop):
+        if do_drop:
+            if self.drops:
+                for d in self.drops:
+                    if d["chances"] != 0:
+                        pos = (self.rect.centerx+randint(-self.ori_body_image_l.get_width()//2,self.ori_body_image_l.get_width()//2),self.rect.centery)
+                        if randint(0,100) <= d["chances"]:
+                            self.add_drop(pos,ItemInstance(d["id"],d["type"],True),d["quantity"])
+                            if d["more"][0] != 0:
+                                if randint(0,100) <= d["more"][0]:
+                                    self.add_drop(pos,ItemInstance(d["id"],d["type"],True),d["more"][1])
 
         self.delete_entity(self)
 

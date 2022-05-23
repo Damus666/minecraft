@@ -6,7 +6,7 @@ from inventory.inventory import Inventory
 from inventory.hotbar import Hotbar
 from item.item import ItemInstance
 from player.stats import Statistics
-from dict.data import items_data
+from dict.data import items_data,blocks_data,tools_data
 from utility.pixel_calculator import height_calculator, width_calculator, medium_calculator
 
 class Player():
@@ -147,9 +147,22 @@ class Player():
             self.selected_item.image = rotate(self.selected_item.image,-45)
             if self.direction == -1:
                 self.selected_item.image = pygame.transform.flip(self.selected_item.image,True,False)
+            match self.selected_item.type:
+                case "blocks":
+                    self.statistics.change_name(blocks_data[self.selected_item.id]["name"])
+                case "items":
+                    self.statistics.change_name(items_data[self.selected_item.id]["name"])
+                case "tools":
+                    self.statistics.change_name(tools_data[self.selected_item.id][self.selected_item.level]["name"])
+        else:
+            self.statistics.change_name(" ")
 
     def give_starter_items(self):
         self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(8,"blocks",True,0,1),1)
+        self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(13,"blocks",True,0,1),1)
+
+        self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(7,"items",True,0,1),40)
+        self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(6,"items",True,0,1),20)
     
     def walk_animation(self,dt):
         if self.is_moving:

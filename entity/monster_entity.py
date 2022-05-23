@@ -92,16 +92,17 @@ class MonsterEntity:
             self.health = 0
             self.die()
 
-    def die(self):
-        if self.drops:
-            for d in self.drops:
-                if d["chances"] != 0:
-                    pos = (self.rect.centerx+randint(-self.body_left.get_width()//2,self.body_left.get_width()//2),self.rect.centery)
-                    if randint(0,100) <= d["chances"]:
-                        self.add_drop(pos,ItemInstance(d["id"],d["type"],True),d["quantity"])
-                        if d["more"][0] != 0:
-                            if randint(0,100) <= d["more"][0]:
-                                self.add_drop(pos,ItemInstance(d["id"],d["type"],True),d["more"][1])
+    def die(self,do_drop=True):
+        if do_drop:
+            if self.drops:
+                for d in self.drops:
+                    if d["chances"] != 0:
+                        pos = (self.rect.centerx+randint(-self.body_left.get_width()//2,self.body_left.get_width()//2),self.rect.centery)
+                        if randint(0,100) <= d["chances"]:
+                            self.add_drop(pos,ItemInstance(d["id"],d["type"],True),d["quantity"])
+                            if d["more"][0] != 0:
+                                if randint(0,100) <= d["more"][0]:
+                                    self.add_drop(pos,ItemInstance(d["id"],d["type"],True),d["more"][1])
 
         self.delete_entity(self)
 

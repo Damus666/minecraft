@@ -40,6 +40,34 @@ recipes = {
                 {"item":{"id":block_ids["stone"],"type":"blocks"},"quantity":8},
             ]
         },
+
+        block_ids["coal_block"]: {
+            "amount":1,
+            "recipe":[
+                {"item":{"id":items_ids["coal"],"type":"items"},"quantity":9},
+            ]
+        },
+
+        block_ids["iron_block"]: {
+            "amount":1,
+            "recipe":[
+                {"item":{"id":items_ids["iron_ingot"],"type":"items"},"quantity":9},
+            ]
+        },
+
+        block_ids["gold_block"]: {
+            "amount":1,
+            "recipe":[
+                {"item":{"id":items_ids["gold_ingot"],"type":"items"},"quantity":9},
+            ]
+        },
+
+        block_ids["diamond_block"]: {
+            "amount":1,
+            "recipe":[
+                {"item":{"id":items_ids["diamond"],"type":"items"},"quantity":9},
+            ]
+        },
     },
 
     "tools":{ # amount always 1
@@ -52,6 +80,18 @@ recipes = {
                 {"item":{"id":block_ids["stone"],"type":"blocks"},"quantity":3},
                 {"item":{"id":items_ids["stick"],"type":"items"},"quantity":2},
             ],
+            2: [
+                {"item":{"id":items_ids["iron_ingot"],"type":"items"},"quantity":3},
+                {"item":{"id":items_ids["stick"],"type":"items"},"quantity":2},
+            ],
+            3: [
+                {"item":{"id":items_ids["gold_ingot"],"type":"items"},"quantity":3},
+                {"item":{"id":items_ids["stick"],"type":"items"},"quantity":2},
+            ],
+            4: [
+                {"item":{"id":items_ids["diamond"],"type":"items"},"quantity":3},
+                {"item":{"id":items_ids["stick"],"type":"items"},"quantity":2},
+            ],
         },
         tool_types["axe"]: {
             0: [
@@ -60,6 +100,18 @@ recipes = {
             ],
             1: [
                 {"item":{"id":block_ids["stone"],"type":"blocks"},"quantity":3},
+                {"item":{"id":items_ids["stick"],"type":"items"},"quantity":2},
+            ],
+            2: [
+                {"item":{"id":items_ids["iron_ingot"],"type":"items"},"quantity":3},
+                {"item":{"id":items_ids["stick"],"type":"items"},"quantity":2},
+            ],
+            3: [
+                {"item":{"id":items_ids["gold_ingot"],"type":"items"},"quantity":3},
+                {"item":{"id":items_ids["stick"],"type":"items"},"quantity":2},
+            ],
+            4: [
+                {"item":{"id":items_ids["diamond"],"type":"items"},"quantity":3},
                 {"item":{"id":items_ids["stick"],"type":"items"},"quantity":2},
             ],
         },
@@ -72,6 +124,18 @@ recipes = {
                 {"item":{"id":block_ids["stone"],"type":"blocks"},"quantity":1},
                 {"item":{"id":items_ids["stick"],"type":"items"},"quantity":2},
             ],
+            2: [
+                {"item":{"id":items_ids["iron_ingot"],"type":"items"},"quantity":1},
+                {"item":{"id":items_ids["stick"],"type":"items"},"quantity":2},
+            ],
+            3: [
+                {"item":{"id":items_ids["gold_ingot"],"type":"items"},"quantity":1},
+                {"item":{"id":items_ids["stick"],"type":"items"},"quantity":2},
+            ],
+            4: [
+                {"item":{"id":items_ids["diamond"],"type":"items"},"quantity":1},
+                {"item":{"id":items_ids["stick"],"type":"items"},"quantity":2},
+            ],
         },
         tool_types["sword"]: {
             0: [
@@ -82,6 +146,18 @@ recipes = {
                 {"item":{"id":block_ids["stone"],"type":"blocks"},"quantity":2},
                 {"item":{"id":items_ids["stick"],"type":"items"},"quantity":1},
             ],
+            2: [
+                {"item":{"id":items_ids["iron_ingot"],"type":"items"},"quantity":2},
+                {"item":{"id":items_ids["stick"],"type":"items"},"quantity":1},
+            ],
+            3: [
+                {"item":{"id":items_ids["gold_ingot"],"type":"items"},"quantity":2},
+                {"item":{"id":items_ids["stick"],"type":"items"},"quantity":1},
+            ],
+            4: [
+                {"item":{"id":items_ids["diamond"],"type":"items"},"quantity":2},
+                {"item":{"id":items_ids["stick"],"type":"items"},"quantity":1},
+            ],
         },
     },
 
@@ -90,6 +166,30 @@ recipes = {
             "amount":4,
             "recipe":[
                 {"item":{"id":block_ids["planks"],"type":"blocks"},"quantity":2},
+            ],
+        },
+        items_ids["coal"]: {
+            "amount":9,
+            "recipe":[
+                {"item":{"id":block_ids["coal_block"],"type":"blocks"},"quantity":1},
+            ],
+        },
+        items_ids["iron_ingot"]: {
+            "amount":9,
+            "recipe":[
+                {"item":{"id":block_ids["iron_block"],"type":"blocks"},"quantity":1},
+            ],
+        },
+        items_ids["gold_ingot"]: {
+            "amount":9,
+            "recipe":[
+                {"item":{"id":block_ids["gold_block"],"type":"blocks"},"quantity":1},
+            ],
+        },
+        items_ids["diamond"]: {
+            "amount":9,
+            "recipe":[
+                {"item":{"id":block_ids["diamond_block"],"type":"blocks"},"quantity":1},
             ],
         },
     },

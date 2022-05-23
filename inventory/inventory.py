@@ -42,6 +42,7 @@ class Inventory:
 
         self.add_drop = add_drop
         self.get_p_data = get_p_data
+        self.place_in_furnace = None
 
         self.init_slots()
         self.load_rects()
@@ -291,8 +292,9 @@ class Inventory:
                 if self.inv_rect.collidepoint(pos[0],pos[1]):
                     self.place_selected_slot(pos)
                 else:
-                    pos = (self.get_p_data()[0][0] + BLOCK_SIZE*self.get_p_data()[1],self.get_p_data()[0][1])
-                    self.add_drop(pos,self.selected_slot[0].item,self.selected_slot[0].quantity)
+                    if not self.place_in_furnace(pos,self.selected_slot):
+                        pos = (self.get_p_data()[0][0] + BLOCK_SIZE*self.get_p_data()[1],self.get_p_data()[0][1])
+                        self.add_drop(pos,self.selected_slot[0].item,self.selected_slot[0].quantity)
                 self.first_time_pressed = True
                 self.selected_slot = []
             self.can_click = True

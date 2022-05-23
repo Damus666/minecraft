@@ -15,7 +15,7 @@ from utility.pixel_calculator import width_calculator,height_calculator, medium_
 # PIXELS CONSTANTS
 
 BLOCK_SIZE = medium_calculator(80,True)
-CHUNK_SIZE = 4
+CHUNK_SIZE = 5
 ITEM_SIZE = medium_calculator(35)
 SLOT_OFFSET = medium_calculator(16)
 SLOT_OFFSET_H = medium_calculator(16)
@@ -24,6 +24,7 @@ SCROLL_LINE_Y = HEIGHT//6
 CRAFTING_CARD_WIDTH = width_calculator(180)
 CRAFTING_CARD_HEIGHT = height_calculator(100)
 CRAFTING_CARD_OFFSET = medium_calculator(5)
+FURNACE_SLOT_SIZE = medium_calculator(80)
 
 # COLORS
 
@@ -53,6 +54,8 @@ MAX_HUNGER = 20
 SAFE_BLOCKS_NUM = 4
 STACK_SIZE = 64
 BLOCK_DAMAGE = 1
+ENTITY_DESPAWN_RANGE = BLOCK_SIZE*1000
+MONSTER_DESPAWN_RANGE = BLOCK_SIZE*500
 
 # COOLDOWNS
 
@@ -66,6 +69,7 @@ NIGHT_DURATION = 3*1000*60
 TRANSITION_DUR = 3*1000
 PLAYER_DAMAGE_COOLDOWN = 0.42*1000
 MOB_DAMAGE_COOLDOWN = 0.2*1000
+DESPAWN_COOLDOWN = 5*1000*60
 
 # OTHER
 

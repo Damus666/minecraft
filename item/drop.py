@@ -1,8 +1,9 @@
+import pygame
 from pygame_helper.helper_graphics import draw_image
-from settings import GRAVITY_CONSTANT, BLOCK_SIZE, ITEM_SIZE
+from settings import DESPAWN_COOLDOWN, GRAVITY_CONSTANT, BLOCK_SIZE, ITEM_SIZE
 
 class Drop:
-    def __init__(self,start_pos,item,quantity=1):
+    def __init__(self,start_pos,item,delete_drop,quantity=1):
 
         self.item = item
         self.quantity = quantity
@@ -12,6 +13,8 @@ class Drop:
         self.gravity = 0
         self.offset = 0
         self.first_time = True
+        self.delete_drop = delete_drop
+        self.created = pygame.time.get_ticks()
 
     def draw(self):
         draw_image(self.item.image,self.rect)
@@ -45,3 +48,6 @@ class Drop:
         self.collisions(rects)
         if not self.is_standing:
             self.fall(dt)
+        if pygame.time.get_ticks()-self.created >= DESPAWN_COOLDOWN:
+            self.delete_drop(self)
+        
