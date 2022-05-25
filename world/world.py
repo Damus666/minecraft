@@ -2,6 +2,7 @@ from pygame_helper.pygame_helper import debug
 from mechanics.combat_system import CombatSystem
 from item.item import ItemInstance
 from mechanics.furnace_system import FurnacesManager
+from mechanics.storage_system import StorageManager
 from player.player import Player
 import pygame, json
 from utility.asset_loader import return_assets
@@ -84,11 +85,14 @@ class World:
         self.combat_system = CombatSystem(self.get_entities,self.player.hotbar.get_selected,self.player.get_rect,self.player.change_selected_item)
         self.crafting_system = CraftingSystem(self.player.inventory.slot_rects["0;0"].left,self.player.inventory.inv_sizes[0],self.player.inventory.inv_rect.bottom+self.player.inventory.y_pos_special,self.player.inventory.get_slots,self.player.inventory.add_item,self.player.inventory.get_free_pos_by_id,self.player.inventory.remove_item)
         self.furnaces_manager = FurnacesManager(self.update_block_frame,self.player.inventory.inv_rect.bottom+self.player.inventory.y_pos_special,self.player.inventory.add_item,self.player.inventory.get_free_pos_by_id,self.get_furnace_open,self.add_drop,self.get_scroll)
+        self.storages_manager = StorageManager(self.player.inventory.slot_rects["0;0"].left,self.player.inventory.inv_rect.bottom+self.player.inventory.y_pos_special,self.player.inventory.try_place_item_in_here_please,self.get_chest_open)
 
         self.player.inventory.place_in_furnace = self.furnaces_manager.place_items_in_furnace
+        self.player.inventory.place_in_chest = self.storages_manager.try_place_item_in_here_please
 
         self.crafting_open = False
         self.furnace_open = False
+        self.storage_open = False
         self.player.refresh_crafting = self.crafting_system.refresh_correct_items
 
         self.exit = exit
@@ -106,6 +110,9 @@ class World:
         self.f3_menu = f3Menu(self.player.hotbar.get_selected,self.player.get_rect,self.get_scroll,self.get_fps)
 
         self.load_data()
+
+    def get_chest_open(self):
+        return self.storage_open
 
     def get_furnace_open(self):
         return self.furnace_open
@@ -138,10 +145,18 @@ class World:
             self.player.inventory.move_inventory(1)
             self.furnace_open = True
             self.furnaces_manager.open_furnace(id)
+        elif action == "chest":
+            self.player.inventory_open = True
+            self.player.inventory.move_inventory(1)
+            self.storage_open = True
+            self.storages_manager.open_storage(id)
 
     def close_crafting(self):
         self.crafting_open = False
         self.furnace_open = False
+        if self.storage_open:
+            self.storages_manager.paste_slots_to_storage()
+        self.storage_open = False
 
     def set_ids(self,struct,block):
         self.structure_b_id = struct
@@ -215,8 +230,15 @@ class World:
                 self.day_night_cycle_bg.alpha = other["alpha"]
                 self.day_night_cycle_bg.is_in_transition = other["in_trans"]
                 self.day_night_cycle_bg.night_tint.set_alpha(self.day_night_cycle_bg.alpha)
+
+            with open(name+FILE_NAMES["special"],"r") as f_file:
+                special = json.load(f_file)
+                self.furnaces_manager.load_furnaces(special["furnaces"])
+                self.storages_manager.load_storages(special["storages"])
+
             self.player.load_data(self.id)
-        except:
+        except Exception as e:
+            print(e)
             self.save_data()
 
     def save_data(self):
@@ -241,6 +263,10 @@ class World:
                 json.dump(other_dict,o_file)
             self.player.save_data(self.id)
             self.last_save = pygame.time.get_ticks()
+
+            special_dict = {"furnaces":self.furnaces_manager.get_furnaces_dict(),"storages":self.storages_manager.get_chests_dict()}
+            with open(name+FILE_NAMES["special"],"w") as f_file:
+                json.dump(special_dict,f_file)
 
     def trigger_death(self):
         self.is_dead = True
@@ -556,6 +582,10 @@ class World:
             if self.player.inventory.y_offset != 0:
                 self.player.inventory.move_inventory(-1)
             self.crafting_open = False
+            self.furnace_open = False
+            if self.storage_open:
+                self.storages_manager.paste_slots_to_storage()
+            self.storage_open = False
 
         if keys[pygame.K_F3] and self.can_press:
             self.is_f3 = not self.is_f3
@@ -569,7 +599,6 @@ class World:
         self.render_drops(dt)
 
         # player
-        self.player.update(self.rect_colliders,dt,mouse)
 
         if not self.is_dead:
             self.input()
@@ -587,8 +616,13 @@ class World:
                     elif self.furnace_open:
                         self.furnaces_manager.active_update(mouse)
                         self.furnaces_manager.draw()
+                    elif self.storage_open:
+                        self.storages_manager.render_slots()
+                        self.storages_manager.update(mouse)
             else:
                 self.last_milli = pygame.time.get_ticks()
+
+        self.player.update(self.rect_colliders,dt,mouse)
 
         # refresh
         self.rect_colliders.clear()

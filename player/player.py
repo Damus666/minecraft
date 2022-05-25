@@ -159,9 +159,8 @@ class Player():
 
     def give_starter_items(self):
         self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(8,"blocks",True,0,1),1)
+        self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(22,"blocks",True,0,1),3)
         self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(13,"blocks",True,0,1),1)
-
-        self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(7,"items",True,0,1),40)
         self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(6,"items",True,0,1),20)
     
     def walk_animation(self,dt):
@@ -243,6 +242,9 @@ class Player():
         else:
             draw_image(self.left_arm_img,self.left_arm_rect)
             draw_image(self.left_leg_img,self.left_leg_rect)
+
+        if self.inventory_open and not self.is_dead:
+            self.inventory.render_slots()
 
     def flip_image(self,do=True):
         if self.direction == 1:
@@ -507,7 +509,6 @@ class Player():
         
 
         if self.inventory_open and not self.is_dead:
-            self.inventory.render_slots()
             self.inventory.update(mouse)
         else:
             if not self.is_dead:

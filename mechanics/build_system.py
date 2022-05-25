@@ -47,6 +47,8 @@ class BuildSystem:
                         self.trigger_special_actions("crafting")
                     if block["id"] == block_ids["furnace"]:
                         self.trigger_special_actions("furnace",block["unique"])
+                    if block["id"] == block_ids["chest"]:
+                        self.trigger_special_actions("chest",block["unique"])
 
     def input(self,mouse):
         pos = pygame.mouse.get_pos()

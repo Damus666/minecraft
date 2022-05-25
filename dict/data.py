@@ -31,6 +31,7 @@ block_ids = {
     "iron_block":19,
     "gold_block":20,
     "diamond_block":21,
+    "chest":22,
 }
 
 ores_data = {
@@ -70,64 +71,62 @@ items_ids = {
     "gold_ingot":11
 }
 
-smeltables_types = ["food","ore"]
-
 items_data = {
     items_ids["meat"]: {"name":"raw_meat",
-                        "type":"food",
+                        "type":["food","smeltable"],
                         "hunger":2,
                         "result":items_ids["cookedmeat"],
-                        "smelt_cooldown":4*1000,},
+                        "smelt_cooldown":3.5*1000,},
 
     items_ids["cookedmeat"]: {"name":"cooked_meat",
-                             "type":"food",
+                             "type":["food"],
                              "hunger":6,},
     
     items_ids["brown_fungus"]: {"name":"brown_mushroom",
-                             "type":"food",
+                             "type":["food"],
                              "hunger":1,},
 
     items_ids["white_fungus"]: {"name":"white_mushroom",
-                             "type":"food",
+                             "type":["food"],
                              "hunger":1,},
 
     items_ids["bone"]: {"name":"bone",
-                             "type":"misc",
+                             "type":["misc"],
                              },
 
     items_ids["stick"]: {"name":"stick",
-                             "type":"misc",
+                             "type":["misc"],
                              },
     
     items_ids["coal"]: {"name":"coal",
-                             "type":"fuel",
+                             "type":["fuel"],
                              "fuel_points":8,
                              },
 
     items_ids["raw_iron"]: {"name":"raw_iron",
-                             "type":"ore",
+                             "type":["ore","smeltable"],
                              "fuel":2,
                              "result":items_ids["iron_ingot"],
                              "smelt_cooldown":6*1000,
                              },
 
     items_ids["raw_gold"]: {"name":"raw_gold",
-                             "type":"ore",
+                             "type":["ore","smeltable"],
                              "fuel":3,
                              "result":items_ids["gold_ingot"],
                              "smelt_cooldown":8*1000,
                              },
 
     items_ids["diamond"]: {"name":"diamond",
-                             "type":"misc",
+                             "type":["misc"],
                              },
 
     items_ids["iron_ingot"]: {"name":"iron_ingot",
-                             "type":"misc",
+                             "type":["misc"],
                              },
 
     items_ids["gold_ingot"]: {"name":"gold_ingot",
-                             "type":"misc",
+                             "type":["misc"],
                              },
 }
 
@@ -186,6 +185,13 @@ blocks_data = {
                                 "mine_cooldown":1.0*1000,
                                 "max_cooldown":1.5,
                                 "drop":{"id":block_ids["crafting"],"type":"blocks"},
+                                "ignore_tool":True,},
+
+    block_ids["chest"]:        {"name":"chest",
+                                "tool_required":tool_types["axe"],
+                                "mine_cooldown":1.1*1000,
+                                "max_cooldown":1.5,
+                                "drop":{"id":block_ids["chest"],"type":"blocks"},
                                 "ignore_tool":True,},
 
     block_ids["planks"]:        {"name":"wood_planks",

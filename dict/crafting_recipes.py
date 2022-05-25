@@ -68,6 +68,13 @@ recipes = {
                 {"item":{"id":items_ids["diamond"],"type":"items"},"quantity":9},
             ]
         },
+
+        block_ids["chest"]: {
+            "amount":1,
+            "recipe":[
+                {"item":{"id":block_ids["planks"],"type":"blocks"},"quantity":8},
+            ]
+        },
     },
 
     "tools":{ # amount always 1

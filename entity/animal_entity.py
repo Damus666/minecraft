@@ -69,7 +69,7 @@ class AnimalEntity:
             self.is_damaging = False
         draw_image(self.damage_hoverlay,self.damage_rect)
 
-    def die(self,do_drop):
+    def die(self,do_drop=True):
         if do_drop:
             if self.drops:
                 for d in self.drops:

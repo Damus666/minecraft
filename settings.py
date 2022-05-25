@@ -25,23 +25,27 @@ CRAFTING_CARD_WIDTH = width_calculator(180)
 CRAFTING_CARD_HEIGHT = height_calculator(100)
 CRAFTING_CARD_OFFSET = medium_calculator(5)
 FURNACE_SLOT_SIZE = medium_calculator(80)
+MAX_DUR_WIDTH = ITEM_SIZE
+DUR_HEIGHT = height_calculator(5)
 
 # COLORS
 
 # inventory
 SLOT_COLOR = (141,140,138)
 INV_BG_COLOR = (212,211,211)
+DUR_BG_COLOR = (30,30,30)
 # card
 OUTLINE_COLOR = (200,200,200)
 COMPLETE_OUTLINE_COLOR = "white"
 BG_COLOR = (30,30,30)
 BG_COLOR_COMPLETE = (100,100,100)
 
+
 # PATHS
 
 GRAPHICS_PATH = "assets/graphics/"
 W_DATA_F = "data/worlds_data/"
-FILE_NAMES = {"chunk":"chunks_data.json","structure":"structures_data.json","block":"player_blocks_data.json","drop":"drops_data.json","other":"world_data.json","entity":"entities_data.json"}
+FILE_NAMES = {"chunk":"chunks_data.json","structure":"structures_data.json","block":"player_blocks_data.json","drop":"drops_data.json","other":"world_data.json","entity":"entities_data.json","special":"specials_blocks_data.json"}
 
 # GAME CONSTANTS
 

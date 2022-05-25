@@ -52,7 +52,7 @@ class f3Menu:
                 if item.type == "blocks":
                     self.infos["selected"] = "Selected Item: "+"name: "+blocks_data[item.id]["name"]+f", id: {item.id}, type: blocks, tool required: "+tools_data[blocks_data[item.id]["tool_required"]][blocks_data[item.id].get("level_required") if blocks_data[item.id].get("level_required") else 0]["name"]
                 elif item.type == "items":
-                    self.infos["selected"] = "Selected Item: "+items_data[item.id]["name"]+f", id: {item.id}, type: items, subtype: "+items_data[item.id]["type"]
+                    self.infos["selected"] = "Selected Item: "+items_data[item.id]["name"]+f", id: {item.id}, type: items, subtype: "+str(items_data[item.id]["type"]).replace("[","").replace("'","").replace("]","")
                 elif item.type == "tools":
                     self.infos["selected"] = "Selected Item: "+tools_data[item.id][item.level]["name"]+f", id: {item.id}, damage: "+str(tools_data[item.id][item.level]["damage"])+f", durability: {item.durability}"
             else:
