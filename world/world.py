@@ -6,9 +6,10 @@ from mechanics.storage_system import StorageManager
 from player.player import Player
 import pygame, json
 from utility.asset_loader import return_assets
-from settings import BLOCK_SIZE, CHUNK_SIZE, ENTITIES, ENTITY_DESPAWN_RANGE, GRAPHICS_PATH, HEIGHT, MONSTERS, WIDTH, FILE_NAMES,W_DATA_F,DAY_DURATION,NIGHT_DURATION,TRANSITION_DUR
-from noise import pnoise1
-from dict.data import block_ids, frames, entities_data,ores_data
+from settings import BIOME_SIZES, BLOCK_SIZE, CHUNK_SIZE, ENTITIES, ENTITY_DESPAWN_RANGE, GRAPHICS_PATH, HEIGHT, MONSTERS, WIDTH, FILE_NAMES,W_DATA_F,DAY_DURATION,NIGHT_DURATION,TRANSITION_DUR
+from noise import pnoise1, snoise2, perlin
+from perlin_noise import PerlinNoise
+from dict.data import block_ids, frames, entities_data,ores_data,biomes_data,biomes_ids
 from random import randint, choice
 from world.f3_menu import f3Menu
 from world.structures import *
@@ -76,9 +77,16 @@ class World:
         self.player = Player((WIDTH//2,HEIGHT//2),self.scroll_x,self.scroll_y,self.assets,self.add_drop,self.trigger_death,self.close_crafting)
 
         self.repeat_noise = 99999999
-        self.amplitude_multiplier = 0.08
+        self.amplitude_multiplier = 0.08#0.08
         self.height_multiplier = 5
         self.structure_render_offset = 5*BLOCK_SIZE
+
+        self.left_biome_size = 0
+        self.right_biome_size = 0
+        self.left_biome = 0
+        self.right_biome = 0
+        self.biome_size = randint(BIOME_SIZES[0],BIOME_SIZES[1])
+        self.last_x_biome = 0
 
         self.mining_system = MiningSystem(self.get_block_rects,self.get_chunk_rects,self.get_world_data,self.edit_chunk_data, self.get_scroll, self.get_structures,self.edit_structures, self.get_player_pos,self.player.hotbar.get_selected,self.add_drop,self.get_player_blocks,self.remove_player_block,self.player.statistics.get_hunger,self.player.change_selected_item,self.delete_special_block)
         self.build_system = BuildSystem(self.get_free_pos_rects,self.player.hotbar.get_selected,self.add_block,self.get_current_block_id,self.update_current_block_id,self.player.hotbar.decrease_slot,self.player.get_rect,self.get_player_pos,self.get_player_blocks,self.get_scroll,self.trigger_special_actions)
@@ -110,6 +118,8 @@ class World:
         self.f3_menu = f3Menu(self.player.hotbar.get_selected,self.player.get_rect,self.get_scroll,self.get_fps)
 
         self.load_data()
+
+        self.perlin_noise = perlin.SimplexNoise()
 
     def get_chest_open(self):
         return self.storage_open
@@ -302,8 +312,8 @@ class World:
     def get_free_pos_rects(self):
         return self.free_pos_rects
 
-    def add_drop(self,pos,item,quantity=1):
-        self.drops.append(Drop(pos,item,self.delete_drop,quantity))
+    def add_drop(self,pos,item,quantity=1,direction=0):
+        self.drops.append(Drop(pos,item,self.delete_drop,quantity,direction))
 
     def get_player_pos(self):
         return self.player.rect
@@ -368,7 +378,14 @@ class World:
 
                 final_x = x*CHUNK_SIZE+x_pos
                 final_y = y*CHUNK_SIZE+y_pos
-                height = int(pnoise1(final_x*self.amplitude_multiplier,repeat=self.repeat_noise) * self.height_multiplier)
+
+                if self.scroll.x >= 0:
+                    biome_id = self.right_biome
+                elif self.scroll.x < 0:
+                    biome_id = self.left_biome
+                biome_data = biomes_data[biome_id]
+
+                height = int(pnoise1(final_x*biome_data["noise_data"]["amplitude_multiplier"],repeat=self.repeat_noise) * biome_data["noise_data"]["height_multiplier"])
                 
                 block_id = -1
                 collider = True
@@ -392,27 +409,27 @@ class World:
                         block_id = block_ids["stone"]
 
                     elif final_y > self.block_heights["dirt"] - height:
-                        block_id = block_ids["dirt"]
+                        block_id = choice(biome_data["bottom_layer"])
 
                     elif final_y == self.block_heights["dirt"]-height:
-                        block_id = block_ids["grassblock"]
+                        block_id = biome_data["top_layer"]
 
                     elif final_y == self.block_heights["dirt"]-height-1:
                         if randint(0,8) == 4:
-                            block_id = block_ids["grass"]
-                            frame_num = frames[block_ids["grass"]]
+                            block_id = biome_data["grass_type"]
+                            frame_num = frames[biome_data["grass_type"]]
                             frame = randint(0,frame_num-1)
                             collider = False
                         else:
                             if 1 < x_pos < CHUNK_SIZE-1:
-                                if randint(0,10) == 4 and has_tree == False:
+                                if randint(1,100) <= biome_data["tree_chances"] and has_tree == False:
                                     tree_data = generate_tree(final_x,final_y,self.structure_b_id)
                                     self.structures_data.append(tree_data[0])
                                     self.structure_b_id = tree_data[1]
                                     has_tree = True
                         if not has_tree and not has_entity:
                             if self.day_night_cycle_bg.is_day:
-                                e_name = choice(ENTITIES)
+                                e_name = choice(biome_data["animal_entities"])
                                 if randint(0,100) <= entities_data[e_name]["chances"]:
                                     match e_name:
                                         case "porcupine":
@@ -436,6 +453,21 @@ class World:
                 elif block_id == -1:
                     chunk_data.append({"pos":[final_x,final_y],"id":-1,"unique":-1})
                 unique_id += 1
+
+        if self.scroll.x >= 0 and x != self.last_x_biome:
+            self.last_x_biome = x
+            self.right_biome_size+= 1
+            if self.right_biome_size > self.biome_size:
+                self.biome_size = randint(BIOME_SIZES[0],BIOME_SIZES[1])
+                self.right_biome = choice(list(biomes_ids.values()))
+                self.right_biome_size = 0
+        elif self.scroll.x < 0 and x != self.last_x_biome:
+            self.last_x_biome = x
+            self.left_biome_size+= 1
+            if self.left_biome_size > self.biome_size:
+                self.biome_size = randint(BIOME_SIZES[0],BIOME_SIZES[1])
+                self.left_biome = choice(list(biomes_ids.values()))
+                self.left_biome_size = 0
 
         return chunk_data
 
@@ -639,3 +671,4 @@ class World:
         if pygame.time.get_ticks()-self.last_time >= 1000 and self.is_paused==False and self.is_dead == False:
             self.last_time=pygame.time.get_ticks()
             self.seconds+=1
+        debug(self.scroll.xy)

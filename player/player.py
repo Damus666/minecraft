@@ -52,7 +52,7 @@ class Player():
         self.gravity = 0
         self.jump_speed = medium_calculator(10,True)#BLOCK_SIZE/(80/10)
 
-        self.x_speed = medium_calculator(8)
+        self.x_speed = medium_calculator(8,True)
         self.direction = 1
 
         self.can_jump = False
@@ -275,7 +275,7 @@ class Player():
     def drop_item(self):
         if self.hotbar.get_selected().empty == False:
             pos = (self.rect.midtop[0]+BLOCK_SIZE*self.direction,self.rect.midtop[1])
-            self.add_drop(pos,self.hotbar.get_selected().item,self.hotbar.get_selected().quantity)
+            self.add_drop(pos,self.hotbar.get_selected().item,self.hotbar.get_selected().quantity,self.direction)
             self.hotbar.slots[self.hotbar.get_s_pos()].empty = True
             self.hotbar.slots[self.hotbar.get_s_pos()].item = None
             self.hotbar.slots[self.hotbar.get_s_pos()].quantity = 1
@@ -469,7 +469,7 @@ class Player():
             sel_item = self.hotbar.get_selected().item
             slot = self.hotbar.get_selected()
             if sel_item.type == "items":
-                if items_data[sel_item.id]["type"] == "food":
+                if "food" in items_data[sel_item.id]["type"]:
                     if self.statistics.player_hunger < self.statistics.max_hunger:
                         v = items_data[sel_item.id]["hunger"]
                         self.statistics.fill_hunger(v)

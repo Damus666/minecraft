@@ -278,7 +278,7 @@ class Inventory:
                 self.slots[poss].quantity = self.selected_slot[0].quantity
             else:
                 pos = (self.get_p_data()[0][0] + BLOCK_SIZE*self.get_p_data()[1],self.get_p_data()[0][1])
-                self.add_drop(pos,self.selected_slot[0].item,self.selected_slot[0].quantity)
+                self.add_drop(pos,self.selected_slot[0].item,self.selected_slot[0].quantity,self.get_p_data()[1])
 
         return could_place
         
@@ -318,7 +318,7 @@ class Inventory:
                         result = self.place_in_chest(self.selected_slot,pos)
                         if  result == False:
                             poss = (self.get_p_data()[0][0] + BLOCK_SIZE*self.get_p_data()[1],self.get_p_data()[0][1])
-                            self.add_drop(poss,self.selected_slot[0].item,self.selected_slot[0].quantity)
+                            self.add_drop(poss,self.selected_slot[0].item,self.selected_slot[0].quantity,self.get_p_data()[1])
                         elif result == 3:
                             self.place_selected_slot(pos,self.selected_slot)
 
@@ -333,7 +333,7 @@ class Inventory:
                 slot = self.slots[str(x)+";"+str(y)]
                 if not slot.empty:
                     pos = (self.get_p_data()[0][0] +randint(-BLOCK_SIZE//2,BLOCK_SIZE//2)*choice([-1,1]),self.get_p_data()[0][1])
-                    self.add_drop(pos,slot.item,slot.quantity)
+                    self.add_drop(pos,slot.item,slot.quantity,self.get_p_data()[1])
 
     def clear(self):
         for y in range(self.rows):

@@ -32,6 +32,9 @@ block_ids = {
     "gold_block":20,
     "diamond_block":21,
     "chest":22,
+    "sand":23,
+    "desertgrass":24,
+    "glass":25,
 }
 
 ores_data = {
@@ -144,6 +147,21 @@ blocks_data = {
                                 "max_cooldown":1.5,
                                 "drop":{"id":block_ids["grassblock"],"type":"blocks"},
                                 "ignore_tool":True,},
+
+    block_ids["sand"]:    {"name":"sand_block",
+                                "tool_required":tool_types["shovel"],
+                                "mine_cooldown":0.66*1000,
+                                "max_cooldown":1.5,
+                                "drop":{"id":block_ids["sand"],"type":"blocks"},
+                                "ignore_tool":True,},
+
+    block_ids["glass"]:    {"name":"glass_block",
+                                "tool_required":tool_types["thepowerofgod"],
+                                "level_required":4,
+                                "mine_cooldown":0.52*1000,
+                                "max_cooldown":1.0,
+                                "drop":{"id":block_ids["glass"],"type":"blocks"},
+                                "ignore_tool":False,},
 
     block_ids["stone"]:         {"name":"stone_block",
                                 "tool_required":tool_types["picaxe"],
@@ -296,6 +314,7 @@ frames = {
     block_ids["iron_ore"]:2,
     block_ids["gold_ore"]:2,
     block_ids["diamond_ore"]:2,
+    block_ids["desertgrass"]:2,
 }
 
 tools_data = {
@@ -352,5 +371,46 @@ entities_data = {
                 "attack_cooldown":4*1000},
 }
 
+biomes_ids = {
+    "plains":0,
+    "forest":1,
+    "desert":2,
+}
 
+trees_ids = {
+    "oak_tree":0
+}
+
+biomes_data = {
+    biomes_ids["plains"] : {
+        "name":"plains",
+        "noise_data":{"height_multiplier":5,"amplitude_multiplier":0.05},
+        "top_layer":block_ids["grassblock"],
+        "bottom_layer":[block_ids["dirt"]],
+        "tree_type":trees_ids["oak_tree"],
+        "tree_chances":10,
+        "grass_type":block_ids["grass"],
+        "animal_entities":["porcupine"],
+    },
+    biomes_ids["forest"] : {
+        "name":"forest",
+        "noise_data":{"height_multiplier":7,"amplitude_multiplier":0.07},
+        "top_layer":block_ids["grassblock"],
+        "bottom_layer":[block_ids["dirt"]],
+        "tree_type":trees_ids["oak_tree"],
+        "tree_chances":50,
+        "grass_type":block_ids["grass"],
+        "animal_entities":["porcupine"],
+    },
+    biomes_ids["desert"] : {
+        "name":"forest",
+        "noise_data":{"height_multiplier":4,"amplitude_multiplier":0.03},
+        "top_layer":block_ids["sand"],
+        "bottom_layer":[block_ids["sand"]],
+        "tree_type":trees_ids["oak_tree"],
+        "tree_chances":0,
+        "grass_type":block_ids["desertgrass"],
+        "animal_entities":["porcupine"],
+    }
+}
 
