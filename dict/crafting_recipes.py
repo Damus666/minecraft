@@ -8,23 +8,48 @@ recipes = {
                 {"item":{"id":block_ids["log"],"type":"blocks"},"quantity":1},
             ]
         },
+        -block_ids["planks"]: {
+            "amount":1,
+            "recipe":[
+                {"item":{"id":block_ids["redwood"],"type":"blocks"},"quantity":1},
+            ]
+        },
+        block_ids["redwood"]: {
+            "amount":4,
+            "recipe":[
+                {"item":{"id":block_ids["birchlog"],"type":"blocks"},"quantity":1},
+            ]
+        },
         block_ids["crafting"]: {
             "amount":1,
             "recipe":[
                 {"item":{"id":block_ids["planks"],"type":"blocks"},"quantity":4},
             ]
         },
-        block_ids["library"]: {
+        block_ids["chest"]: {
             "amount":1,
             "recipe":[
-                {"item":{"id":block_ids["log"],"type":"blocks"},"quantity":1},
-                {"item":{"id":block_ids["planks"],"type":"blocks"},"quantity":3},
+                {"item":{"id":block_ids["planks"],"type":"blocks"},"quantity":8},
+            ]
+        },
+        block_ids["furnace"]: {
+            "amount":1,
+            "recipe":[
+                {"item":{"id":block_ids["stone"],"type":"blocks"},"quantity":8},
+            ]
+        },
+        block_ids["library"]: {
+            "amount":2,
+            "recipe":[
+                {"item":{"id":block_ids["redwood"],"type":"blocks"},"quantity":2},
+                {"item":{"id":block_ids["planks"],"type":"blocks"},"quantity":2},
             ]
         },
         block_ids["red_bricks"]: {
-            "amount":1,
+            "amount":2,
             "recipe":[
                 {"item":{"id":block_ids["stone"],"type":"blocks"},"quantity":1},
+                {"item":{"id":block_ids["redgrimstone"],"type":"blocks"},"quantity":1},
             ]
         },
         block_ids["grey_bricks"]: {
@@ -32,12 +57,6 @@ recipes = {
             "recipe":[
                 {"item":{"id":block_ids["stone"],"type":"blocks"},"quantity":1},
                 {"item":{"id":block_ids["grimstone"],"type":"blocks"},"quantity":1},
-            ]
-        },
-        block_ids["furnace"]: {
-            "amount":1,
-            "recipe":[
-                {"item":{"id":block_ids["stone"],"type":"blocks"},"quantity":8},
             ]
         },
 
@@ -69,10 +88,17 @@ recipes = {
             ]
         },
 
-        block_ids["chest"]: {
+        block_ids["glass"]: {
             "amount":1,
             "recipe":[
-                {"item":{"id":block_ids["planks"],"type":"blocks"},"quantity":8},
+                {"item":{"id":block_ids["sand"],"type":"blocks"},"quantity":4},
+            ]
+        },
+
+        -block_ids["glass"]: {
+            "amount":1,
+            "recipe":[
+                {"item":{"id":block_ids["redsand"],"type":"blocks"},"quantity":4},
             ]
         },
     },

@@ -27,7 +27,7 @@ CRAFTING_CARD_OFFSET = medium_calculator(5)
 FURNACE_SLOT_SIZE = medium_calculator(80)
 MAX_DUR_WIDTH = ITEM_SIZE
 DUR_HEIGHT = height_calculator(5)
-BIOME_SIZES = [80,100]
+BIOME_SIZES = [35,55]
 
 # COLORS
 

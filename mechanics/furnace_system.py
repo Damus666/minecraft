@@ -187,20 +187,22 @@ class FurnacesManager:
                 self.furnaces[self.selected_id]["result_item"]["quantity"] = 0
 
     def delete_furnace(self,block):
-        pos = (block["pos"][0]*BLOCK_SIZE-self.get_scroll().x+BLOCK_SIZE/2+randint(0,BLOCK_SIZE//4)*choice([1,-1]),block["pos"][1]*BLOCK_SIZE-self.get_scroll().y+BLOCK_SIZE/2)
-        if self.furnaces[block["unique"]]["smelt_item"]["quantity"] != 0:
+        try:
             pos = (block["pos"][0]*BLOCK_SIZE-self.get_scroll().x+BLOCK_SIZE/2+randint(0,BLOCK_SIZE//4)*choice([1,-1]),block["pos"][1]*BLOCK_SIZE-self.get_scroll().y+BLOCK_SIZE/2)
-            self.add_drop(pos,self.furnaces[block["unique"]]["smelt_item"]["item"],self.furnaces[block["unique"]]["smelt_item"]["quantity"])
+            if self.furnaces[block["unique"]]["smelt_item"]["quantity"] != 0:
+                pos = (block["pos"][0]*BLOCK_SIZE-self.get_scroll().x+BLOCK_SIZE/2+randint(0,BLOCK_SIZE//4)*choice([1,-1]),block["pos"][1]*BLOCK_SIZE-self.get_scroll().y+BLOCK_SIZE/2)
+                self.add_drop(pos,self.furnaces[block["unique"]]["smelt_item"]["item"],self.furnaces[block["unique"]]["smelt_item"]["quantity"])
 
-        if self.furnaces[block["unique"]]["fuel_item"]["quantity"] != 0:
-            pos = (block["pos"][0]*BLOCK_SIZE-self.get_scroll().x+BLOCK_SIZE/2+randint(0,BLOCK_SIZE//4)*choice([1,-1]),block["pos"][1]*BLOCK_SIZE-self.get_scroll().y+BLOCK_SIZE/2)
-            self.add_drop(pos,self.furnaces[block["unique"]]["fuel_item"]["item"],self.furnaces[block["unique"]]["fuel_item"]["quantity"])
+            if self.furnaces[block["unique"]]["fuel_item"]["quantity"] != 0:
+                pos = (block["pos"][0]*BLOCK_SIZE-self.get_scroll().x+BLOCK_SIZE/2+randint(0,BLOCK_SIZE//4)*choice([1,-1]),block["pos"][1]*BLOCK_SIZE-self.get_scroll().y+BLOCK_SIZE/2)
+                self.add_drop(pos,self.furnaces[block["unique"]]["fuel_item"]["item"],self.furnaces[block["unique"]]["fuel_item"]["quantity"])
 
-        if self.furnaces[block["unique"]]["result_item"]["quantity"] != 0:
-            pos = (block["pos"][0]*BLOCK_SIZE-self.get_scroll().x+BLOCK_SIZE/2+randint(0,BLOCK_SIZE//4)*choice([1,-1]),block["pos"][1]*BLOCK_SIZE-self.get_scroll().y+BLOCK_SIZE/2)
-            self.add_drop(pos,self.furnaces[block["unique"]]["result_item"]["item"],self.furnaces[block["unique"]]["result_item"]["quantity"])
+            if self.furnaces[block["unique"]]["result_item"]["quantity"] != 0:
+                pos = (block["pos"][0]*BLOCK_SIZE-self.get_scroll().x+BLOCK_SIZE/2+randint(0,BLOCK_SIZE//4)*choice([1,-1]),block["pos"][1]*BLOCK_SIZE-self.get_scroll().y+BLOCK_SIZE/2)
+                self.add_drop(pos,self.furnaces[block["unique"]]["result_item"]["item"],self.furnaces[block["unique"]]["result_item"]["quantity"])
 
-        self.furnaces.pop(block["unique"],None)
+            self.furnaces.pop(block["unique"],None)
+        except: pass
 
     def draw(self):
         draw_image(self.chest_text,self.chest_rect)

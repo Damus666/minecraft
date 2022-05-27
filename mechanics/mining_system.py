@@ -101,11 +101,11 @@ class MiningSystem:
 
     def remove_blocks(self):
         self.chunk.remove(self.block)
-        if self.block["id"] == block_ids["grassblock"]:
+        if self.block["id"] in [block_ids["grassblock"],block_ids["sand"],block_ids["redsand"],block_ids["stonegrass"]]:
             for c in self.get_chunk_rects():
                 chunk = self.get_world_data()[c[1]]
                 for bl in chunk:
-                    if bl["id"] == block_ids["grass"] and bl["pos"][1] == self.block["pos"][1]-1 and bl["pos"][0]==self.block["pos"][0]:
+                    if bl["id"] in [block_ids["grass"],block_ids["desertgrass"],block_ids["littlestone"]] and bl["pos"][1] == self.block["pos"][1]-1 and bl["pos"][0]==self.block["pos"][0]:
                         chunk.remove(bl)
                         chunk.append({"pos":bl["pos"],"id":-1,"unique":-1})
                         self.edit_chunk_data(chunk,c[1])

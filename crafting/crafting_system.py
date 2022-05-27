@@ -52,7 +52,7 @@ class CraftingSystem:
         for section in self.sections:
             for index,recipe in enumerate(recipes[section].keys()):
                 if section in ["blocks","items"]:
-                    self.cards[section].append(RecipeCard(section,recipe,recipes[section][recipe]["recipe"],recipes[section][recipe]["amount"]))
+                    self.cards[section].append(RecipeCard(section,abs(recipe),recipes[section][recipe]["recipe"],recipes[section][recipe]["amount"]))
                 else:
                     for level in recipes[section][recipe].keys():
                         self.cards[section].append(RecipeCard(section,recipe,recipes[section][recipe][level],1,level))

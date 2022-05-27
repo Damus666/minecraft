@@ -35,6 +35,16 @@ block_ids = {
     "sand":23,
     "desertgrass":24,
     "glass":25,
+    "littlestone":26,
+    "cactus":27,
+    "graveldirt":28,
+    "gravel":29,
+    "redleaves":30,
+    "redsand":31,
+    "redgrimstone":32,
+    "stonegrass":33,
+    "birchlog":34,
+    "redwood":35,
 }
 
 ores_data = {
@@ -141,11 +151,18 @@ blocks_data = {
                                 "drop":{"id":block_ids["dirt"],"type":"blocks"},
                                 "ignore_tool":True,},
 
+    block_ids["graveldirt"]:          {"name":"gravelly_dirt_block",
+                                "tool_required":tool_types["shovel"],
+                                "mine_cooldown":0.72*1000,
+                                "max_cooldown":1.5,
+                                "drop":{"id":block_ids["dirt"],"type":"blocks"},
+                                "ignore_tool":True,},
+
     block_ids["grassblock"]:    {"name":"grass_block",
                                 "tool_required":tool_types["shovel"],
                                 "mine_cooldown":0.72*1000,
                                 "max_cooldown":1.5,
-                                "drop":{"id":block_ids["grassblock"],"type":"blocks"},
+                                "drop":{"id":block_ids["dirt"],"type":"blocks"},
                                 "ignore_tool":True,},
 
     block_ids["sand"]:    {"name":"sand_block",
@@ -153,6 +170,13 @@ blocks_data = {
                                 "mine_cooldown":0.66*1000,
                                 "max_cooldown":1.5,
                                 "drop":{"id":block_ids["sand"],"type":"blocks"},
+                                "ignore_tool":True,},
+
+    block_ids["redsand"]:    {"name":"red_sand_block",
+                                "tool_required":tool_types["shovel"],
+                                "mine_cooldown":0.66*1000,
+                                "max_cooldown":1.5,
+                                "drop":{"id":block_ids["redsand"],"type":"blocks"},
                                 "ignore_tool":True,},
 
     block_ids["glass"]:    {"name":"glass_block",
@@ -169,12 +193,33 @@ blocks_data = {
                                 "max_cooldown":8,
                                 "drop":{"id":block_ids["stone"],"type":"blocks"},
                                 "ignore_tool":True,},
+
+    block_ids["stonegrass"]:         {"name":"green_stone_block",
+                                "tool_required":tool_types["picaxe"],
+                                "mine_cooldown":1.1*1000,
+                                "max_cooldown":6,
+                                "drop":{"id":block_ids["stone"],"type":"blocks"},
+                                "ignore_tool":True,},
+
+    block_ids["gravel"]:         {"name":"gravel_block",
+                                "tool_required":tool_types["picaxe"],
+                                "mine_cooldown":1.0*1000,
+                                "max_cooldown":3,
+                                "drop":{"id":block_ids["gravel"],"type":"blocks"},
+                                "ignore_tool":True,},
     
     block_ids["grimstone"]:     {"name":"grimstone_block",
                                 "tool_required":tool_types["picaxe"],
                                 "mine_cooldown":1.82*1000,
                                 "max_cooldown":8,
                                 "drop":{"id":block_ids["grimstone"],"type":"blocks"},
+                                "ignore_tool":True,},
+
+    block_ids["redgrimstone"]:     {"name":"red_grimstone_block",
+                                "tool_required":tool_types["picaxe"],
+                                "mine_cooldown":1.82*1000,
+                                "max_cooldown":8,
+                                "drop":{"id":block_ids["redgrimstone"],"type":"blocks"},
                                 "ignore_tool":True,},
 
     block_ids["bedrock"]:       {"name":"bedrock",
@@ -191,11 +236,32 @@ blocks_data = {
                                 "drop":{"id":block_ids["log"],"type":"blocks"},
                                 "ignore_tool":True,},
 
+    block_ids["birchlog"]:           {"name":"birch_log_block",
+                                "tool_required":tool_types["axe"],
+                                "mine_cooldown":1.05*1000,
+                                "max_cooldown":1.5,
+                                "drop":{"id":block_ids["birchlog"],"type":"blocks"},
+                                "ignore_tool":True,},
+
     block_ids["leaves"]:        {"name":"leaves_block",
                                 "tool_required":tool_types["axe"],
                                 "mine_cooldown":0.4*1000,
                                 "max_cooldown":1,
                                 "drop":{"id":block_ids["leaves"],"type":"blocks"},
+                                "ignore_tool":True,},
+
+    block_ids["cactus"]:        {"name":"cactus_block",
+                                "tool_required":tool_types["axe"],
+                                "mine_cooldown":0.6*1000,
+                                "max_cooldown":1.1,
+                                "drop":{"id":block_ids["cactus"],"type":"blocks"},
+                                "ignore_tool":True,},
+
+    block_ids["redleaves"]:        {"name":"birch_leaves_block",
+                                "tool_required":tool_types["axe"],
+                                "mine_cooldown":0.4*1000,
+                                "max_cooldown":1,
+                                "drop":{"id":block_ids["redleaves"],"type":"blocks"},
                                 "ignore_tool":True,},
 
     block_ids["crafting"]:        {"name":"crafting_table",
@@ -217,6 +283,13 @@ blocks_data = {
                                 "mine_cooldown":0.85*1000,
                                 "max_cooldown":1.5,
                                 "drop":{"id":block_ids["planks"],"type":"blocks"},
+                                "ignore_tool":True,},
+
+    block_ids["redwood"]:        {"name":"red_wood_planks",
+                                "tool_required":tool_types["axe"],
+                                "mine_cooldown":0.85*1000,
+                                "max_cooldown":1.5,
+                                "drop":{"id":block_ids["redwood"],"type":"blocks"},
                                 "ignore_tool":True,},
 
     block_ids["red_bricks"]:        {"name":"red_bricks",
@@ -315,6 +388,7 @@ frames = {
     block_ids["gold_ore"]:2,
     block_ids["diamond_ore"]:2,
     block_ids["desertgrass"]:2,
+    block_ids["littlestone"]:2,
 }
 
 tools_data = {
@@ -375,42 +449,90 @@ biomes_ids = {
     "plains":0,
     "forest":1,
     "desert":2,
+    "birchforest":3,
+    "reddesert":4,
+    "mountain":5,
 }
 
 trees_ids = {
-    "oak_tree":0
+    "oak_tree":0,
+    "birch_tree":1,
+    "cactus":2,
 }
 
 biomes_data = {
     biomes_ids["plains"] : {
         "name":"plains",
-        "noise_data":{"height_multiplier":5,"amplitude_multiplier":0.05},
+        "noise_data":{"height_multiplier":4,"amplitude_multiplier":0.05},
         "top_layer":block_ids["grassblock"],
         "bottom_layer":[block_ids["dirt"]],
+        "deep_layer":block_ids["grimstone"],
         "tree_type":trees_ids["oak_tree"],
-        "tree_chances":10,
+        "tree_chances":7,
+        "grass_chances":35,
         "grass_type":block_ids["grass"],
         "animal_entities":["porcupine"],
     },
     biomes_ids["forest"] : {
         "name":"forest",
-        "noise_data":{"height_multiplier":7,"amplitude_multiplier":0.07},
+        "noise_data":{"height_multiplier":6,"amplitude_multiplier":0.07},
         "top_layer":block_ids["grassblock"],
-        "bottom_layer":[block_ids["dirt"]],
+        "bottom_layer":[block_ids["dirt"],block_ids["graveldirt"]],
+        "deep_layer":block_ids["grimstone"],
         "tree_type":trees_ids["oak_tree"],
         "tree_chances":50,
+        "grass_chances":10,
         "grass_type":block_ids["grass"],
         "animal_entities":["porcupine"],
     },
+    biomes_ids["birchforest"] : {
+        "name":"birch_forest",
+        "noise_data":{"height_multiplier":6,"amplitude_multiplier":0.07},
+        "top_layer":block_ids["grassblock"],
+        "bottom_layer":[block_ids["dirt"],block_ids["graveldirt"]],
+        "deep_layer":block_ids["grimstone"],
+        "tree_type":trees_ids["birch_tree"],
+        "tree_chances":50,
+        "grass_chances":10,
+        "grass_type":block_ids["grass"],
+        "animal_entities":["porcupine"],
+    },
+    biomes_ids["mountain"] : {
+        "name":"mountain",
+        "noise_data":{"height_multiplier":12,"amplitude_multiplier":0.085},
+        "top_layer":block_ids["stonegrass"],
+        "bottom_layer":[block_ids["stone"],block_ids["gravel"]],
+        "deep_layer":block_ids["grimstone"],
+        "tree_type":trees_ids["oak_tree"],
+        "tree_chances":30,
+        "grass_chances":15,
+        "grass_type":block_ids["littlestone"],
+        "animal_entities":["porcupine"],
+    },
     biomes_ids["desert"] : {
-        "name":"forest",
+        "name":"desert",
         "noise_data":{"height_multiplier":4,"amplitude_multiplier":0.03},
         "top_layer":block_ids["sand"],
         "bottom_layer":[block_ids["sand"]],
-        "tree_type":trees_ids["oak_tree"],
-        "tree_chances":0,
+        "deep_layer":block_ids["redgrimstone"],
+        "tree_type":trees_ids["cactus"],
+        "tree_chances":20,
+        "grass_chances":20,
         "grass_type":block_ids["desertgrass"],
         "animal_entities":["porcupine"],
-    }
+    },
+
+    biomes_ids["reddesert"] : {
+        "name":"red_desert",
+        "noise_data":{"height_multiplier":4,"amplitude_multiplier":0.03},
+        "top_layer":block_ids["redsand"],
+        "bottom_layer":[block_ids["redsand"]],
+        "deep_layer":block_ids["redgrimstone"],
+        "tree_type":trees_ids["cactus"],
+        "tree_chances":15,
+        "grass_chances":20,
+        "grass_type":block_ids["desertgrass"],
+        "animal_entities":["porcupine"],
+    },
 }
 
