@@ -33,7 +33,7 @@ class Game:
     def create_folder(self,name):
         if not os.path.exists(W_DATA_F+name):
             os.mkdir(W_DATA_F+name)
-
+ 
     def play_world(self,id):
         found = False
         for index,world in enumerate(self.worlds):
@@ -47,9 +47,11 @@ class Game:
         self.world = self.worlds[self.world_index]
         self.in_game = True
         self.world.last_milli = pygame.time.get_ticks()
+        pygame.mouse.set_visible(False)
 
     def exit_world(self):
         self.in_game = False
+        pygame.mouse.set_visible(True)
 
     def delete_world(self,id):
         for world in self.worlds:
@@ -82,7 +84,7 @@ last_time = time.time()
 
 while True: 
     dt = time.time()-last_time
-    dt *= FPS
+    dt *= 60
     last_time = time.time()
 
     for event in get_events():

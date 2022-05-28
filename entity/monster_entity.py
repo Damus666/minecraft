@@ -157,26 +157,27 @@ class MonsterEntity:
                                     self.rect.top = obs.bottom+self.inf_height
                                     self.is_standing = False
                                     self.gravity = 0
-                            if self.direction == 1:
-                                if 0 < (obs.left+self.o_3)-(self.rect.right-self.o_3) < BLOCK_SIZE//2:
-                                    if self.rect.right > obs.left:
-                                        self.rect.right = obs.left
-                                        self.can_move_d = False
-                                        self.can_attack = False
-                                        if self.can_jump:
-                                            self.jump()
-                                        if r.bottom < obs.centery:
-                                            self.rect.bottom = obs.top-self.inf_height-3
-                            elif self.direction == -1:
-                                if 0 < (self.rect.left+self.o_3)-(obs.right-self.o_3) < BLOCK_SIZE//2:
-                                    if self.rect.left < obs.right:
-                                        self.rect.left = obs.right
-                                        self.can_move_a = False
-                                        self.can_attack = False
-                                        if self.can_jump:
-                                            self.jump()
-                                        if r.bottom < obs.centery:
-                                            self.rect.bottom = obs.top-self.inf_height-3
+                            if not (self.gravity >= 0 and r.bottom < obs.centery):
+                                if self.direction == 1:
+                                    if 0 < (obs.left+self.o_3)-(self.rect.right-self.o_3) < BLOCK_SIZE//2:
+                                        if self.rect.right > obs.left:
+                                            self.rect.right = obs.left
+                                            self.can_move_d = False
+                                            self.can_attack = False
+                                            if self.can_jump:
+                                                self.jump()
+                                            if r.bottom < obs.centery:
+                                                self.rect.bottom = obs.top-self.inf_height-3
+                                elif self.direction == -1:
+                                    if 0 < (self.rect.left+self.o_3)-(obs.right-self.o_3) < BLOCK_SIZE//2:
+                                        if self.rect.left < obs.right:
+                                            self.rect.left = obs.right
+                                            self.can_move_a = False
+                                            self.can_attack = False
+                                            if self.can_jump:
+                                                self.jump()
+                                            if r.bottom < obs.centery:
+                                                self.rect.bottom = obs.top-self.inf_height-3
                                         
                         else:
                             if not inf_y.colliderect(obs):

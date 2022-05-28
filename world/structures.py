@@ -20,7 +20,7 @@ def generate_cactus(x,y,start_id):
     unique+=1
     tree_data.append({"pos":[x,y-1],"id":block_ids["cactus"],"collider":collider,"frame":frame,"unique":unique,})
     unique+=1
-    for i in range(more):
+    for i in range(more+1):
         tree_data.append({"pos":[x,y-1-i],"id":block_ids["cactus"],"collider":collider,"frame":frame,"unique":unique,})
         unique+=1
 

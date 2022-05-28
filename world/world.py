@@ -12,16 +12,18 @@ from perlin_noise import PerlinNoise
 from dict.data import block_ids, frames, entities_data,ores_data,biomes_data,biomes_ids
 from random import randint, choice
 from world.f3_menu import f3Menu
-from world.structures import *
+from world.structures import generate_structure
+from world.custom_cursor import CustomCursor
 from mechanics.mining_system import MiningSystem
 from item.drop import Drop
 from mechanics.build_system import BuildSystem
-from pygame_helper.helper_graphics import draw_image
+from pygame_helper.helper_graphics import draw_image, scale_image, load_image
 from utility.custom_button import CustomButton
 from entity.entities import PorcupineEntity, SkeletonEntity, ZombieEntity
 from crafting.crafting_system import CraftingSystem
 from utility.pixel_calculator import height_calculator, medium_calculator
 from world.day_night_cycle import DayNightCycle
+from perlin_noise import PerlinNoise
 
 class World:
     def __init__(self, screen,id,exit,get_fps,c_folder):
@@ -74,7 +76,7 @@ class World:
         self.player_blocks = []
         self.block_heights = {"stone":16,"dirt":8,"deepslate":50,"bedrock":64}
 
-        self.player = Player((WIDTH//2,HEIGHT//2),self.scroll_x,self.scroll_y,self.assets,self.add_drop,self.trigger_death,self.close_crafting)
+        self.player = Player((WIDTH//2,0),self.scroll_x,self.scroll_y,self.assets,self.add_drop,self.trigger_death,self.close_crafting)
 
         self.repeat_noise = 99999999
         self.amplitude_multiplier = 0.08#0.08
@@ -91,7 +93,7 @@ class World:
 
         self.mining_system = MiningSystem(self.get_block_rects,self.get_chunk_rects,self.get_world_data,self.edit_chunk_data, self.get_scroll, self.get_structures,self.edit_structures, self.get_player_pos,self.player.hotbar.get_selected,self.add_drop,self.get_player_blocks,self.remove_player_block,self.player.statistics.get_hunger,self.player.change_selected_item,self.delete_special_block)
         self.build_system = BuildSystem(self.get_free_pos_rects,self.player.hotbar.get_selected,self.add_block,self.get_current_block_id,self.update_current_block_id,self.player.hotbar.decrease_slot,self.player.get_rect,self.get_player_pos,self.get_player_blocks,self.get_scroll,self.trigger_special_actions)
-        self.combat_system = CombatSystem(self.get_entities,self.player.hotbar.get_selected,self.player.get_rect,self.player.change_selected_item)
+        self.combat_system = CombatSystem(self.get_entities,self.player.hotbar.get_selected,self.player.get_rect,self.player.change_selected_item,self.player.get_last_attack,self.player.attack)
         self.crafting_system = CraftingSystem(self.player.inventory.slot_rects["0;0"].left,self.player.inventory.inv_sizes[0],self.player.inventory.inv_rect.bottom+self.player.inventory.y_pos_special,self.player.inventory.get_slots,self.player.inventory.add_item,self.player.inventory.get_free_pos_by_id,self.player.inventory.remove_item)
         self.furnaces_manager = FurnacesManager(self.update_block_frame,self.player.inventory.inv_rect.bottom+self.player.inventory.y_pos_special,self.player.inventory.add_item,self.player.inventory.get_free_pos_by_id,self.get_furnace_open,self.add_drop,self.get_scroll)
         self.storages_manager = StorageManager(self.player.inventory.slot_rects["0;0"].left,self.player.inventory.inv_rect.bottom+self.player.inventory.y_pos_special,self.player.inventory.try_place_item_in_here_please,self.get_chest_open)
@@ -118,9 +120,19 @@ class World:
 
         self.f3_menu = f3Menu(self.player.hotbar.get_selected,self.player.get_rect,self.get_scroll,self.get_fps)
 
+        self.cursor = CustomCursor()
+
+        self.noise_check = 0.06
+        self.noise = PerlinNoise(0.12)
+
+        self.rock_tint = scale_image(load_image(f"{GRAPHICS_PATH}world_bg/3.png"),None,WIDTH,HEIGHT)
+        self.vignette = scale_image(load_image(f"{GRAPHICS_PATH}world_bg/4.png",True),None,WIDTH,HEIGHT)
+        self.is_underground = False
+        self.last_check = 0
+
         self.load_data()
 
-        self.perlin_noise = perlin.SimplexNoise()
+        self.check_underground()
 
     def get_chest_open(self):
         return self.storage_open
@@ -148,7 +160,7 @@ class World:
     def trigger_special_actions(self, action, id=0):
         if action == "crafting":
             self.player.inventory_open = True
-            self.player.inventory.move_inventory(1)
+            self.player.inventory.move_inventory_x(1)
             self.crafting_open = True
             self.crafting_system.refresh_correct_items()
         elif action == "furnace":
@@ -250,7 +262,6 @@ class World:
 
             with open(name+FILE_NAMES["special"],"r") as f_file:
                 special = json.load(f_file)
-                print(special["furnaces"])
                 self.furnaces_manager.load_furnaces(special["furnaces"])
                 self.storages_manager.load_storages(special["storages"])
 
@@ -294,14 +305,41 @@ class World:
         self.player.inventory.clear()
         self.player.selected_item = None
 
+    def reset_entities(self):
+        if self.drops:
+            for drop in self.drops:
+                drop.rect.x += self.scroll.x
+                drop.rect.y += self.scroll.y
+                drop.rect.y -= 20
+        if self.animal_entities:
+            for animal in self.drops:
+                animal.rect.x += self.scroll.x
+                animal.rect.y += self.scroll.y
+                animal.rect.y -= 20
+        if self.monster_entities:
+            for monster in self.drops:
+                monster.rect.x += self.scroll.x
+                monster.rect.y += self.scroll.y
+                monster.rect.y -= 20
+
     def reset_world(self):
-        self.player.rect.center = (WIDTH//2,HEIGHT//2)
+        self.reset_entities()
         self.scroll = pygame.Vector2((0,0))
         self.player.statistics.reset()
         self.player.hotbar.slots[str(round(self.player.hotbar.columns/2-0.1))+";0"].selected = True
         self.player.hotbar.selection_index = round(self.player.hotbar.columns/2-0.1)
         self.mining_system.reset()
         self.player.reset()
+        self.player.reset_pos()
+        self.chunk_colliders.clear()
+        self.free_pos_rects.clear()
+        self.rect_colliders.clear()
+        self.render_chunks()
+        self.render_entities(1)
+        self.render_player_blocks()
+        self.render_structures()
+        self.render_drops(1)
+        self.player.first_time_fall = True
 
     def remove_player_block(self,block):
         self.player_blocks.remove(block)
@@ -427,79 +465,85 @@ class World:
 
         for y_pos in range(CHUNK_SIZE):
             for x_pos in range(CHUNK_SIZE):
+                
                 self.block_heights = {"stone":randint(15,17),"dirt":8,"deepslate":randint(46,54),"bedrock":randint(64,70)}
 
                 final_x = x*CHUNK_SIZE+x_pos
                 final_y = y*CHUNK_SIZE+y_pos
 
+                n = self.noise.noise((final_x,final_y))
                 height = int(pnoise1(final_x*biome_data["noise_data"]["amplitude_multiplier"],repeat=self.repeat_noise) * biome_data["noise_data"]["height_multiplier"])
                 
-                block_id = -1
-                collider = True
-                frame = 0
-                found_ore = False
-                if randint(0,100) <= 10:
-                    for ore in ores_data.keys():
-                        if final_y in range(ores_data[ore]["range"][0]-height,ores_data[ore]["range"][1]-height):
-                            if randint(0,100) <= ores_data[ore]["chances"]:
-                                block_id = ore
-                                frame = choice([0,1])
-                                found_ore = True
-                if not found_ore:
-                    if final_y >= self.block_heights["bedrock"] - height:
-                        block_id = block_ids["bedrock"]
+                if final_y <= self.block_heights["stone"]+10 or n < self.noise_check or final_y >= self.block_heights["bedrock"]:
 
-                    elif final_y >= self.block_heights["deepslate"] - height:
-                        block_id = biome_data["deep_layer"]
+                    block_id = -1
+                    collider = True
+                    frame = 0
+                    found_ore = False
+                    if randint(0,100) <= 10:
+                        for ore in ores_data.keys():
+                            if final_y in range(ores_data[ore]["range"][0]-height,ores_data[ore]["range"][1]-height):
+                                if randint(0,100) <= ores_data[ore]["chances"]:
+                                    block_id = ore
+                                    frame = choice([0,1])
+                                    found_ore = True
+                    if not found_ore:
+                        if final_y >= self.block_heights["bedrock"] - height:
+                            block_id = block_ids["bedrock"]
 
-                    elif final_y >= self.block_heights["stone"] - height:
-                        block_id = block_ids["stone"]
+                        elif final_y >= self.block_heights["deepslate"] - height:
+                            block_id = biome_data["deep_layer"]
 
-                    elif final_y > self.block_heights["dirt"] - height:
-                        block_id = choice(biome_data["bottom_layer"])
+                        elif final_y >= self.block_heights["stone"] - height:
+                            block_id = block_ids["stone"]
 
-                    elif final_y == self.block_heights["dirt"]-height:
-                        block_id = biome_data["top_layer"]
+                        elif final_y > self.block_heights["dirt"] - height:
+                            block_id = choice(biome_data["bottom_layer"])
 
-                    elif final_y == self.block_heights["dirt"]-height-1:
-                        if randint(1,100) <= biome_data["grass_chances"]:
-                            block_id = biome_data["grass_type"]
-                            frame_num = frames[biome_data["grass_type"]]
-                            frame = randint(0,frame_num-1)
-                            collider = False
-                        else:
-                            if 1 < x_pos < CHUNK_SIZE-1:
-                                if randint(1,100) <= biome_data["tree_chances"] and has_tree == False:
-                                    tree_data = generate_structure(final_x,final_y,self.structure_b_id,biome_data["tree_type"])
-                                    self.structures_data.append(tree_data[0])
-                                    self.structure_b_id = tree_data[1]
-                                    has_tree = True
-                        if not has_tree and not has_entity:
-                            if self.day_night_cycle_bg.is_day:
-                                e_name = choice(biome_data["animal_entities"])
-                                if randint(0,100) <= entities_data[e_name]["chances"]:
-                                    match e_name:
-                                        case "porcupine":
-                                            e = PorcupineEntity((final_x*BLOCK_SIZE-self.scroll.x,final_y*BLOCK_SIZE-self.scroll.y),e_name,self.add_drop,self.delete_entity)
-                                            self.animal_entities.append(e)
-                                has_entity = True
+                        elif final_y == self.block_heights["dirt"]-height:
+                            block_id = biome_data["top_layer"]
+
+                        elif final_y == self.block_heights["dirt"]-height-1:
+                            if randint(1,100) <= biome_data["grass_chances"]:
+                                block_id = biome_data["grass_type"]
+                                frame_num = frames[biome_data["grass_type"]]
+                                frame = randint(0,frame_num-1)
+                                collider = False
                             else:
-                                m_name = choice(MONSTERS)
-                                if randint(0,100) <= entities_data[m_name]["chances"]:
-                                    pos = (final_x*BLOCK_SIZE-self.scroll.x,final_y*BLOCK_SIZE-self.scroll.y)
-                                    match m_name:
-                                        case "zombie":
-                                            z = ZombieEntity(pos,m_name,self.add_drop,self.delete_entity,self.player.get_rect,self.player.statistics.damage_player)
-                                            self.monster_entities.append(z)
-                                        case "skeleton":
-                                            s = SkeletonEntity(pos,m_name,self.add_drop,self.delete_entity,self.player.get_rect,self.player.statistics.damage_player)
-                                            self.monster_entities.append(s)
+                                if 1 < x_pos < CHUNK_SIZE-1:
+                                    if randint(1,100) <= biome_data["tree_chances"] and has_tree == False:
+                                        tree_data = generate_structure(final_x,final_y,self.structure_b_id,biome_data["tree_type"])
+                                        self.structures_data.append(tree_data[0])
+                                        self.structure_b_id = tree_data[1]
+                                        has_tree = True
+                            if not has_tree and not has_entity:
+                                if self.day_night_cycle_bg.is_day:
+                                    e_name = choice(biome_data["animal_entities"])
+                                    if randint(0,100) <= entities_data[e_name]["chances"]:
+                                        match e_name:
+                                            case "porcupine":
+                                                e = PorcupineEntity((final_x*BLOCK_SIZE-self.scroll.x,final_y*BLOCK_SIZE-self.scroll.y),e_name,self.add_drop,self.delete_entity)
+                                                self.animal_entities.append(e)
+                                    has_entity = True
+                                else:
+                                    m_name = choice(MONSTERS)
+                                    if randint(0,100) <= entities_data[m_name]["chances"]:
+                                        pos = (final_x*BLOCK_SIZE-self.scroll.x,final_y*BLOCK_SIZE-self.scroll.y)
+                                        match m_name:
+                                            case "zombie":
+                                                z = ZombieEntity(pos,m_name,self.add_drop,self.delete_entity,self.player.get_rect,self.player.statistics.damage_player)
+                                                self.monster_entities.append(z)
+                                            case "skeleton":
+                                                s = SkeletonEntity(pos,m_name,self.add_drop,self.delete_entity,self.player.get_rect,self.player.statistics.damage_player)
+                                                self.monster_entities.append(s)
 
-                if block_id != -1:
-                    chunk_data.append({"pos":[final_x,final_y],"id":block_id,"collider":collider,"frame":frame,"unique":unique_id})
-                elif block_id == -1:
+                    if block_id != -1:
+                        chunk_data.append({"pos":[final_x,final_y],"id":block_id,"collider":collider,"frame":frame,"unique":unique_id})
+                    elif block_id == -1:
+                        chunk_data.append({"pos":[final_x,final_y],"id":-1,"unique":-1})
+                    unique_id += 1
+                else:
                     chunk_data.append({"pos":[final_x,final_y],"id":-1,"unique":-1})
-                unique_id += 1
 
         return chunk_data
 
@@ -619,15 +663,19 @@ class World:
             self.exit()
 
     def draw(self,dt):
-        self.day_night_cycle_bg.draw_bg()
         self.day_night_cycle_bg.draw_day_night()
-        # player
+        if not self.is_underground:
+            self.day_night_cycle_bg.draw_bg()
+        else:
+            draw_image(self.rock_tint,(0,0))
             
         self.render_chunks()
         self.render_structures()
         
         self.render_player_blocks()
         self.render_entities(dt)
+        if self.is_underground:
+            draw_image(self.vignette,(0,0))
         if not self.is_dead:
             self.player.custom_draw(dt)
 
@@ -645,6 +693,8 @@ class World:
             self.player.inventory_open = False
             if self.player.inventory.y_offset != 0:
                 self.player.inventory.move_inventory(-1)
+            if self.player.inventory.x_offset != 0:
+                self.player.inventory.move_inventory_x(-1)
             self.crafting_open = False
             self.furnace_open = False
             if self.storage_open:
@@ -703,3 +753,18 @@ class World:
         if pygame.time.get_ticks()-self.last_time >= 1000 and self.is_paused==False and self.is_dead == False:
             self.last_time=pygame.time.get_ticks()
             self.seconds+=1
+
+        self.cursor.draw(pygame.mouse.get_pos())
+        self.check_underground()
+
+    def check_underground(self):
+
+        if pygame.time.get_ticks() - self.last_check >= 2000:
+            self.last_check = pygame.time.get_ticks()
+            if self.f3_menu.get_pos()[1] <= -10:
+                if not self.is_underground:
+                    self.is_underground = True
+            else:
+                if self.is_underground:
+                    self.is_underground = False
+                

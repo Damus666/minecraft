@@ -9,9 +9,9 @@ from utility.pixel_calculator import height_calculator, width_calculator, medium
 class CraftingSystem:
     def __init__(self,left_pos,width,inv_bottom,get_inventory_slots,add_item,get_free_pos,remove_item):
         
-        self.left = left_pos- CRAFTING_CARD_WIDTH-width_calculator(25)
+        self.left = left_pos- CRAFTING_CARD_WIDTH-width_calculator(25) + width/2+width/4 - width_calculator(80)
         self.width = width+CRAFTING_CARD_WIDTH*2+width_calculator(50)
-        self.top = inv_bottom+height_calculator(110)
+        self.top = height_calculator(160)
 
         self.get_inv_slots = get_inventory_slots
         self.add_item = add_item
@@ -27,7 +27,7 @@ class CraftingSystem:
         self.tools_button = CustomButton((0,0),(self.left+self.width/2+self.button_size+10,self.top-height_calculator(60)),"assets/graphics/gui/buttons/tools.png",None,None,None,"white",self.button_size,self.button_size,True)
 
         self.sections = ["blocks","items","tools"]
-        self.selected_section = 1
+        self.selected_section = 0
 
         self.cards = {"blocks":[],"items":[],"tools":[]}
         self.rects = {"blocks":[],"items":[],"tools":[]}

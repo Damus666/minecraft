@@ -1,10 +1,11 @@
 import json
 import pygame
 from item.item import ItemInstance
-from settings import BG_COLOR, ITEM_SIZE, SLOT_COLOR, SLOT_OFFSET, WIDTH,HEIGHT, INV_BG_COLOR, STACK_SIZE, BLOCK_SIZE
+from settings import BG_COLOR, BG_COLOR_COMPLETE, COMPLETE_OUTLINE_COLOR, ITEM_SIZE, OUTLINE_COLOR, SLOT_COLOR, SLOT_OFFSET, WIDTH,HEIGHT, INV_BG_COLOR, STACK_SIZE, BLOCK_SIZE
 from pygame_helper.helper_graphics import draw_image, get_window_surface
 from inventory.inventory_slot import InventorySlot
 from random import randint,choice
+from menu.tooltip import Tooltip
 
 from utility.pixel_calculator import height_calculator, width_calculator, medium_calculator
 
@@ -20,24 +21,34 @@ class Inventory:
         self.columns = 9
         
         self.y_offset = 0
-        self.y_pos_special = -height_calculator(300)
+        self.y_pos_special = -height_calculator(250)
+        self.x_offset = 0
         self.b_radius = medium_calculator(5,True)
 
         self.slot_image = pygame.Surface((ITEM_SIZE+SLOT_OFFSET,ITEM_SIZE+SLOT_OFFSET))
         self.slot_image.fill(BG_COLOR)
         self.slot_image.set_alpha(100)
+        self.slot_image_c = pygame.Surface((ITEM_SIZE+SLOT_OFFSET,ITEM_SIZE+SLOT_OFFSET))
+        self.slot_image_c.fill(BG_COLOR_COMPLETE)
+        self.slot_image_c.set_alpha(100)
 
         self.bg_tint = pygame.Surface((WIDTH,HEIGHT))
         self.bg_tint.set_alpha(100)
 
-        self.inv_offset = 30
-        self.inv_sizes = ((self.columns)*(ITEM_SIZE+SLOT_OFFSET)+(SLOT_OFFSET*self.columns)+self.inv_offset-SLOT_OFFSET,(self.rows)*(ITEM_SIZE+SLOT_OFFSET)+(SLOT_OFFSET*self.rows)+self.inv_offset-SLOT_OFFSET)
+        self.inv_offset = medium_calculator(30)
+        self.not_hotbar_offset = ITEM_SIZE+SLOT_OFFSET 
+        self.inv_sizes = ((self.columns)*(ITEM_SIZE+SLOT_OFFSET)+(SLOT_OFFSET*self.columns)+self.inv_offset-SLOT_OFFSET,(self.rows)*(ITEM_SIZE+SLOT_OFFSET)+(SLOT_OFFSET*self.rows)+self.inv_offset-SLOT_OFFSET+self.not_hotbar_offset)
         self.offset = [(WIDTH//2)-self.inv_sizes[0]//2,(HEIGHT//2)-self.inv_sizes[1]//2]
         self.inv_rect = pygame.Rect(self.offset[0]-self.inv_offset/2,self.offset[1]-self.inv_offset/2,self.inv_sizes[0]+4,self.inv_sizes[1]+4)
 
+        self.x_pos_special = -width_calculator(self.inv_sizes[0]/2+self.inv_offset+self.inv_sizes[0]/4)
+
         self.font = pygame.font.Font("assets/fonts/regular.ttf",medium_calculator(40,True))
+        self.font_2 = pygame.font.Font("assets/fonts/regular.ttf",medium_calculator(35,True))
         self.chest_text = self.font.render("Inventory",True,"white")
-        self.chest_rect = self.chest_text.get_rect(center=(WIDTH/2,self.offset[1]-height_calculator(50)))
+        self.hotbar_text = self.font_2.render("Hotbar",True,"white")
+        self.chest_rect = self.chest_text.get_rect(center=(WIDTH/2,self.offset[1]+ITEM_SIZE+SLOT_OFFSET*1.5+self.not_hotbar_offset/2))
+        self.hotbar_rect = self.hotbar_text.get_rect(center=(WIDTH/2,self.offset[1]-height_calculator(30)))
 
         self.can_click = True
         self.first_time_pressed = True
@@ -49,6 +60,8 @@ class Inventory:
         self.place_in_furnace = None
         self.place_in_chest = None
 
+        self.tooltip = Tooltip()
+
         self.init_slots()
         self.load_rects()
 
@@ -57,6 +70,14 @@ class Inventory:
         self.load_rects()
         self.inv_rect.y += self.y_pos_special*dir
         self.chest_rect.y += self.y_pos_special*dir
+        self.hotbar_rect.y += self.y_pos_special*dir
+
+    def move_inventory_x(self,dir):
+        self.x_offset += self.x_pos_special*dir
+        self.load_rects()
+        self.inv_rect.x += self.x_pos_special*dir
+        self.chest_rect.x += self.x_pos_special*dir
+        self.hotbar_rect.x += self.x_pos_special*dir
 
     def save_data(self,id):
         try:
@@ -109,9 +130,12 @@ class Inventory:
     def load_rects(self):
         for y in range(self.rows):
             for x in range(self.columns):
-                x_t= (ITEM_SIZE+SLOT_OFFSET)*x+self.offset[0]
+                offset = self.not_hotbar_offset
+                if y == 0:
+                    offset = 0
+                x_t= (ITEM_SIZE+SLOT_OFFSET)*x+self.offset[0]+self.x_offset
                 y_t= (ITEM_SIZE+SLOT_OFFSET)*y+self.offset[1]+self.y_offset
-                rect = pygame.Rect(x_t+SLOT_OFFSET*x,y_t+SLOT_OFFSET*y,ITEM_SIZE+SLOT_OFFSET+4,ITEM_SIZE+SLOT_OFFSET+4)
+                rect = pygame.Rect(x_t+SLOT_OFFSET*x,y_t+SLOT_OFFSET*y+offset,ITEM_SIZE+SLOT_OFFSET+4,ITEM_SIZE+SLOT_OFFSET+4)
                 pos = str(x)+";"+str(y)
                 self.slot_rects[pos] = rect
 
@@ -192,18 +216,25 @@ class Inventory:
 
     def render_slots(self):
         draw_image(self.bg_tint,(0,0))
+        draw_image(self.hotbar_text,self.hotbar_rect)
         draw_image(self.chest_text,self.chest_rect)
         #pygame.draw.rect(get_window_surface(),"black",self.inv_rect,4,10)
         #pygame.draw.rect(get_window_surface(),INV_BG_COLOR,pygame.Rect(self.offset[0]-self.inv_offset/2+2,self.offset[1]-self.inv_offset/2+2,self.inv_sizes[0],self.inv_sizes[1]),0,10)
 
         for y in range(self.rows):
             for x in range(self.columns):
-                x_t= (ITEM_SIZE+SLOT_OFFSET)*x+self.offset[0]
+                x_t= (ITEM_SIZE+SLOT_OFFSET)*x+self.offset[0]+self.x_offset
                 y_t= (ITEM_SIZE+SLOT_OFFSET)*y+self.offset[1]+self.y_offset
                 #pygame.draw.rect(get_window_surface(),"black",self.slot_rects[str(x)+";"+str(y)],2,5)
-                draw_image(self.slot_image,(x_t+SLOT_OFFSET*x+2,y_t+SLOT_OFFSET*y+2))
-                pygame.draw.rect(get_window_surface(),(200,200,200),self.slot_rects[str(x)+";"+str(y)],self.outline_size,self.b_radius)
-                self.slots[str(x)+";"+str(y)].draw_item(x_t+SLOT_OFFSET*x,y_t+SLOT_OFFSET*y,SLOT_OFFSET)
+                if y != 0:
+                    draw_image(self.slot_image,(x_t+SLOT_OFFSET*x+2,y_t+SLOT_OFFSET*y+2+self.not_hotbar_offset))
+                    pygame.draw.rect(get_window_surface(),OUTLINE_COLOR,self.slot_rects[str(x)+";"+str(y)],self.outline_size,self.b_radius)
+                    self.slots[str(x)+";"+str(y)].draw_item(x_t+SLOT_OFFSET*x,y_t+SLOT_OFFSET*y+self.not_hotbar_offset,SLOT_OFFSET)
+                else:
+                    draw_image(self.slot_image_c,(x_t+SLOT_OFFSET*x+2,y_t+SLOT_OFFSET*y+2))
+                    pygame.draw.rect(get_window_surface(),COMPLETE_OUTLINE_COLOR,self.slot_rects[str(x)+";"+str(y)],self.outline_size,self.b_radius)
+                    self.slots[str(x)+";"+str(y)].draw_item(x_t+SLOT_OFFSET*x,y_t+SLOT_OFFSET*y,SLOT_OFFSET)
+                
 
     def get_collided_slot(self,posi):
         pos = None
@@ -295,6 +326,7 @@ class Inventory:
                             self.slots[self.selected_slot[1]].quantity = 0
                             self.slots[self.selected_slot[1]].item = None
                             self.selected_slot[0].refresh_quantity_img()
+                            self.tooltip.change_tooltip(self.selected_slot[0].item.id,self.selected_slot[0].item.type,self.selected_slot[0].item.level)
                         else:
                             self.can_click = False
                             self.first_time_pressed = True
@@ -304,6 +336,7 @@ class Inventory:
                         if self.selected_slot[0].item.is_stackable:
                             pygame.draw.rect(get_window_surface(),"white",pygame.Rect(pos[0]-ITEM_SIZE//2-2,pos[1]-ITEM_SIZE//2-2,self.selected_slot[0].quantity_img.get_width()+4,self.selected_slot[0].quantity_img.get_height()),0,3)
                             draw_image(self.selected_slot[0].quantity_img,(pos[0]-ITEM_SIZE//2,pos[1]-ITEM_SIZE//2-2))
+                        self.tooltip.draw()
                 else:
                     self.can_click = False
             if self.was_clicking == False:

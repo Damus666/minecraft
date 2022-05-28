@@ -101,7 +101,7 @@ class MiningSystem:
 
     def remove_blocks(self):
         self.chunk.remove(self.block)
-        if self.block["id"] in [block_ids["grassblock"],block_ids["sand"],block_ids["redsand"],block_ids["stonegrass"]]:
+        if self.block["id"] in [block_ids["grassblock"],block_ids["sand"],block_ids["redsand"],block_ids["stonegrass"],block_ids["stonedirt"]]:
             for c in self.get_chunk_rects():
                 chunk = self.get_world_data()[c[1]]
                 for bl in chunk:
@@ -182,15 +182,23 @@ class MiningSystem:
                     self.is_structure = False
                     self.is_block = False
                     self.start_pressing = pygame.time.get_ticks()
+                    self.first_time_press = False
                 else:
                     if self.get_structure_selection():
                         self.is_structure = True
                         self.is_block = False
                         self.start_pressing = pygame.time.get_ticks()
+                        self.first_time_press = False
                     else:
                         if self.get_player_block_selection():
                             self.is_block = True
                             self.start_pressing = pygame.time.get_ticks()
+                            self.first_time_press = False
+                        else:
+                            self.first_time_press = True
+
+            #if self.first_time_press != False:
+                #self.first_time_press = False
 
             if self.block:
                 if abs(self.block["pos"][0]*BLOCK_SIZE-self.get_scroll().x-self.get_player_pos().centerx) > PLAYER_MINE_RANGE or abs(self.block["pos"][1]*BLOCK_SIZE-self.get_scroll().y-self.get_player_pos().centery) > PLAYER_MINE_RANGE:
@@ -226,9 +234,7 @@ class MiningSystem:
                                     self.c_s_i(None)
                                 else:
                                     self.get_selected().refresh_durability()
-
-            if self.first_time_press != False:
-                self.first_time_press = False
+                        self.first_time_press = True
 
         if ((not (mouse[0])) and (not self.first_time_press)) or mouse[2]:
             self.reset()

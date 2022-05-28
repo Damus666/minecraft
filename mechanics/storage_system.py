@@ -108,43 +108,6 @@ class StorageManager:
                 self.slots[pos].item = ItemInstance(self.storages[self.selected_id][pos]["item"]["id"],self.storages[self.selected_id][pos]["item"]["type"],self.storages[self.selected_id][pos]["item"]["is_stackable"],self.storages[self.selected_id][pos]["item"]["level"],self.storages[self.selected_id][pos]["item"]["durability"])
             self.slots[pos].refresh_quantity_img()
 
-    """
-    def save_data(self,id):
-        try:
-            with open("data/worlds_data/"+id+"/inventory_data.json","w") as i_file:
-                data = {}
-                for s in self.slots.keys():
-                    slot = self.slots[s]
-                    if slot.empty:
-                        data[s] = {"empty":slot.empty,"item":False,"quantity":slot.quantity,"sel":slot.selected,}
-                    else:
-                        data[s] = {"empty":slot.empty,"item":{"id":slot.item.id,"type":slot.item.type,"is_stackable":slot.item.is_stackable,"level":slot.item.level,"durability":slot.item.durability},"quantity":slot.quantity,"sel":slot.selected}
-                json.dump(data,i_file)
-
-        except:
-            pass
-        
-
-    def load_data(self,id):
-        #try:
-            with open("data/worlds_data/"+id+"/inventory_data.json","r") as i_file:
-                data = json.load(i_file)
-                for s in data.keys():
-                    slot = data[s]
-                    if slot["empty"]:
-                        self.slots[s].empty = True
-                        self.slots[s].item = None
-                        self.slots[s].quantity = slot["quantity"]
-                    else:
-                        self.slots[s].empty = False
-                        self.slots[s].item = ItemInstance(slot["item"]["id"],slot["item"]["type"],slot["item"]["is_stackable"],slot["item"]["level"],slot["item"]["durability"])
-                        self.slots[s].quantity = slot["quantity"]
-                    self.slots[s].selected = slot["sel"]
-                    self.slots[s].refresh_quantity_img()
-        #except:
-            #self.save_data(id)
-            """
-
     def get_chests_dict(self):
         return self.storages
 

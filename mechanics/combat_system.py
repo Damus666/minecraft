@@ -3,7 +3,7 @@ from settings import BLOCK_DAMAGE, PLAYER_HIT_RANGE
 from dict.data import tools_data
 
 class CombatSystem:
-    def __init__(self,get_entites,get_selected, get_p_rect, c_s_i):
+    def __init__(self,get_entites,get_selected, get_p_rect, c_s_i,get_player_last_attack,player_attack):
 
         self.can_click = True
         
@@ -11,6 +11,8 @@ class CombatSystem:
         self.get_selected = get_selected
         self.get_p_rect = get_p_rect
         self.change_selected_item = c_s_i
+        self.get_p_last_a = get_player_last_attack
+        self.player_attack = player_attack
 
     def find_entity(self):
         pos = pygame.mouse.get_pos()
@@ -30,15 +32,17 @@ class CombatSystem:
             if self.get_selected().item.type in ["blocks","items"]:
                 e.damage(BLOCK_DAMAGE)
             else:
-                damage = tools_data[self.get_selected().item.id][self.get_selected().item.level]["damage"]
-                e.damage(damage)
-                self.get_selected().item.durability -= 1
-                if self.get_selected().item.durability <= 0:
-                    self.get_selected().empty = True
-                    self.get_selected().item = None
-                    self.change_selected_item(None)
-                else:
-                    self.get_selected().refresh_durability()
+                if pygame.time.get_ticks()-self.get_p_last_a()>= tools_data[self.get_selected().item.id][self.get_selected().item.level]["attack_cooldown"]:
+                    damage = tools_data[self.get_selected().item.id][self.get_selected().item.level]["damage"]
+                    e.damage(damage)
+                    self.get_selected().item.durability -= 1
+                    if self.get_selected().item.durability <= 0:
+                        self.get_selected().empty = True
+                        self.get_selected().item = None
+                        self.change_selected_item(None)
+                    else:
+                        self.get_selected().refresh_durability()
+                    self.player_attack()
 
     def input(self,mouse):
 

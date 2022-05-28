@@ -7,7 +7,7 @@ from inventory.hotbar import Hotbar
 from item.item import ItemInstance
 from player.stats import Statistics
 from dict.data import items_data,blocks_data,tools_data
-from utility.pixel_calculator import height_calculator, width_calculator, medium_calculator
+from utility.pixel_calculator import  medium_calculator
 
 class Player():
     def __init__(self,start_pos,scrollx,scrolly, assets, add_drop,trigger_death, close_crafting):
@@ -30,7 +30,7 @@ class Player():
         self.left_leg_img = self.original_leg_img
         self.right_leg_img = self.original_leg_img
 
-        self.rect = self.body_img.get_rect(center=start_pos)
+        self.rect = self.body_img.get_rect(midtop=start_pos)
         self.head_rect = self.head_img_l.get_rect(midbottom=self.rect.midtop)
         self.left_arm_rect = self.left_arm_img.get_rect(midtop=self.rect.midtop)
         self.right_arm_rect = self.right_arm_img.get_rect(midtop=self.rect.midtop)
@@ -79,6 +79,7 @@ class Player():
         self.first_time_land = False
         self.pixel_fell = 0
         self.r_offset = self.body_img.get_width()/4
+        self.first_time_fall = True
 
         self.v = 3
         self.started_moving = False
@@ -88,6 +89,17 @@ class Player():
         self.o_1 = medium_calculator(10)
         self.o_2 = medium_calculator(5)
         self.o_3 = medium_calculator(15)
+
+        self.last_attack = 0
+
+    def get_last_attack(self):
+        return self.last_attack
+
+    def attack(self):
+        self.last_attack = pygame.time.get_ticks()
+
+    def reset_pos(self):
+        self.rect.midtop = (WIDTH/2,0)
 
     def save_data(self,id):
         try:
@@ -151,7 +163,10 @@ class Player():
                 case "blocks":
                     self.statistics.change_name(blocks_data[self.selected_item.id]["name"])
                 case "items":
-                    self.statistics.change_name(items_data[self.selected_item.id]["name"])
+                    interaction_msg = ""
+                    if items_data[self.selected_item.id]["key"] != None:
+                        interaction_msg = " - ["+items_data[self.selected_item.id]["key"]+"]"+" "+items_data[self.selected_item.id]["hotbar_tooltip"]
+                    self.statistics.change_name(items_data[self.selected_item.id]["name"]+interaction_msg)
                 case "tools":
                     self.statistics.change_name(tools_data[self.selected_item.id][self.selected_item.level]["name"])
         else:
@@ -159,9 +174,11 @@ class Player():
 
     def give_starter_items(self):
         self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(8,"blocks",True,0,1),1)
-        self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(22,"blocks",True,0,1),3)
-        self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(13,"blocks",True,0,1),1)
-        self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(6,"items",True,0,1),20)
+        self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(0,"blocks",True,0,1),40)
+        self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(1,"blocks",True,0,1),10)
+
+        self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(0,"tools",True,4,100))
+        self.inventory.add_item(self.inventory.get_empty_slot_pos(),ItemInstance(2,"tools",True,4,100))
     
     def walk_animation(self,dt):
         if self.is_moving:
@@ -246,6 +263,8 @@ class Player():
         if self.inventory_open and not self.is_dead:
             self.inventory.render_slots()
 
+        self.statistics.draw()
+
     def flip_image(self,do=True):
         if self.direction == 1:
             self.head_img = self.head_img_r
@@ -257,7 +276,7 @@ class Player():
 
     def fall(self,dt):
         if not self.is_standing:
-            self.gravity += GRAVITY_CONSTANT
+            self.gravity += GRAVITY_CONSTANT*dt
             if self.gravity < 0:
                 if self.rect.top < SCROLL_LINE_Y:
                     self.scroll_y(dt)
@@ -359,6 +378,8 @@ class Player():
                     self.change_selected_item(self.hotbar.get_selected().item.__copy__())
                 if self.inventory.y_offset != 0:
                     self.inventory.move_inventory(-1)
+                if self.inventory.x_offset != 0:
+                    self.inventory.move_inventory_x(-1)
                 self.close_crafting()
         if not keys[pygame.K_e]:
             self.can_open_inventory = True
@@ -415,9 +436,12 @@ class Player():
                                             self.can_jump = True
                                             if self.first_time_land:
                                                 self.first_time_land = False
-                                                blocks_fell = ((self.pixel_fell)/BLOCK_SIZE)-SAFE_BLOCKS_NUM
-                                                if int(blocks_fell) > 0:
-                                                    self.statistics.damage_player(int(blocks_fell))
+                                                if not self.first_time_fall:
+                                                    blocks_fell = ((self.pixel_fell)/BLOCK_SIZE)-SAFE_BLOCKS_NUM
+                                                    if int(blocks_fell) > 0:
+                                                            self.statistics.damage_player(int(blocks_fell))
+                                                else:
+                                                    self.first_time_fall = False
                                                 self.pixel_fell = 0
                             elif self.gravity < 0:
                                 if r.top < obs.bottom and r.top > obs.centery+15:
@@ -425,20 +449,21 @@ class Player():
                                     self.is_standing = False
                                     self.gravity = 0
                             #if self.is_moving:
-                            if self.direction == 1:
-                                if 0 < (obs.left+self.o_3)-(self.rect.right-self.o_3) < BLOCK_SIZE//2:
-                                    if self.rect.right > obs.left:
-                                        self.can_move_d = False
-                                        self.rect.right = obs.left
-                                        if r.bottom < obs.centery:
-                                            self.rect.bottom = obs.top-self.inf_height-3
-                            elif self.direction == -1:
-                                if 0 < (self.rect.left+self.o_3)-(obs.right-self.o_3)< BLOCK_SIZE//2 :
-                                    if self.rect.left < obs.right:
-                                        self.can_move_a = False
-                                        self.rect.left = obs.right
-                                        if r.bottom < obs.centery:
-                                            self.rect.bottom = obs.top-self.inf_height-3
+                            if not (self.gravity >= 0 and r.bottom < obs.centery):
+                                if self.direction == 1:
+                                    if 0 < (obs.left+self.o_3)-(self.rect.right-self.o_3) < BLOCK_SIZE//2:
+                                        if self.rect.right > obs.left:
+                                            self.can_move_d = False
+                                            self.rect.right = obs.left
+                                            if r.bottom < obs.centery:
+                                                self.rect.bottom = obs.top-self.inf_height-3
+                                elif self.direction == -1:
+                                    if 0 < (self.rect.left+self.o_3)-(obs.right-self.o_3)< BLOCK_SIZE//2 :
+                                        if self.rect.left < obs.right:
+                                            self.can_move_a = False
+                                            self.rect.left = obs.right
+                                            if r.bottom < obs.centery:
+                                                self.rect.bottom = obs.top-self.inf_height-3
                         else: 
                             if not inf_y.colliderect(obs):
                                 not_collided += 1
@@ -505,8 +530,6 @@ class Player():
             self.statistics.update()
         self.obstacles_collisions(obstacles)
         self.hotbar.render_slots()
-        self.statistics.draw()
-        
 
         if self.inventory_open and not self.is_dead:
             self.inventory.update(mouse)
