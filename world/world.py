@@ -1,3 +1,4 @@
+from select import select
 from pygame_helper.pygame_helper import debug
 from mechanics.combat_system import CombatSystem
 from item.item import ItemInstance
@@ -6,7 +7,7 @@ from mechanics.storage_system import StorageManager
 from player.player import Player
 import pygame, json
 from utility.asset_loader import return_assets
-from settings import BIOME_SIZES, BLOCK_SIZE, CHUNK_SIZE, ENTITIES, ENTITY_DESPAWN_RANGE, GRAPHICS_PATH, HEIGHT, MONSTERS, WIDTH, FILE_NAMES,W_DATA_F,DAY_DURATION,NIGHT_DURATION,TRANSITION_DUR
+from settings import BIOME_SIZES, BLOCK_SIZE, CHUNK_SIZE, ENTITIES, ENTITY_DESPAWN_RANGE, GRAPHICS_PATH, HEIGHT, MONSTER_CREATION_COOLDOWN, MONSTERS, WIDTH, FILE_NAMES,W_DATA_F,DAY_DURATION,NIGHT_DURATION,TRANSITION_DUR
 from noise import pnoise1, snoise2, perlin
 from perlin_noise import PerlinNoise
 from dict.data import block_ids, frames, entities_data,ores_data,biomes_data,biomes_ids
@@ -123,16 +124,20 @@ class World:
         self.cursor = CustomCursor()
 
         self.noise_check = 0.06
-        self.noise = PerlinNoise(0.12)
+        self.seed = randint(0,1000)
 
         self.rock_tint = scale_image(load_image(f"{GRAPHICS_PATH}world_bg/3.png"),None,WIDTH,HEIGHT)
         self.vignette = scale_image(load_image(f"{GRAPHICS_PATH}world_bg/4.png",True),None,WIDTH,HEIGHT)
         self.is_underground = False
         self.last_check = 0
 
+        self.can = False
+
         self.load_data()
 
-        self.check_underground()
+        self.noise = PerlinNoise(0.12,self.seed)
+
+        #self.check_underground()
 
     def get_chest_open(self):
         return self.storage_open
@@ -259,6 +264,7 @@ class World:
                 self.last_x_biome_r = other["last_x_r"]
                 self.left_biomes_ranges = other["left_biomes"]
                 self.right_biomes_ranges = other["right_biomes"]
+                self.seed = other["seed"]
 
             with open(name+FILE_NAMES["special"],"r") as f_file:
                 special = json.load(f_file)
@@ -269,6 +275,7 @@ class World:
         except Exception as e:
             print(e)
             self.save_data()
+        self.can = True
 
     def save_data(self):
             self.create_folder(self.id)
@@ -288,7 +295,7 @@ class World:
                 json.dump(entity_dict,e_file)
 
             other_dict = {"scroll":[self.scroll.x,self.scroll.y],"structure_b_id":self.structure_b_id,"player_b_id":self.player_block_id,"seconds":self.seconds,"is_day":self.day_night_cycle_bg.is_day,"sun_x":self.day_night_cycle_bg.sun_x_pos,"moon_x":self.day_night_cycle_bg.moon_x_pos,"in_trans":self.day_night_cycle_bg.is_in_transition,"alpha":self.day_night_cycle_bg.alpha\
-                ,"l_b_s":self.left_biome_size,"r_b_s":self.right_biome_size,"last_x_r":self.last_x_biome_r,"last_x_l":self.last_x_biome_l,"left_biomes":self.left_biomes_ranges,"right_biomes":self.right_biomes_ranges}
+                ,"l_b_s":self.left_biome_size,"r_b_s":self.right_biome_size,"last_x_r":self.last_x_biome_r,"last_x_l":self.last_x_biome_l,"left_biomes":self.left_biomes_ranges,"right_biomes":self.right_biomes_ranges,"seed":self.seed}
             with open(name+FILE_NAMES["other"],"w") as o_file:
                 json.dump(other_dict,o_file)
             self.player.save_data(self.id)
@@ -544,7 +551,17 @@ class World:
                     unique_id += 1
                 else:
                     chunk_data.append({"pos":[final_x,final_y],"id":-1,"unique":-1})
-
+                    m_name = choice(MONSTERS)
+                    if randint(0,100) <= entities_data[m_name]["chances"]/2:
+                        pos = (final_x*BLOCK_SIZE-self.scroll.x,final_y*BLOCK_SIZE-self.scroll.y)
+                        match m_name:
+                            case "zombie":
+                                z = ZombieEntity(pos,m_name,self.add_drop,self.delete_entity,self.player.get_rect,self.player.statistics.damage_player)
+                                self.monster_entities.append(z)
+                            case "skeleton":
+                                s = SkeletonEntity(pos,m_name,self.add_drop,self.delete_entity,self.player.get_rect,self.player.statistics.damage_player)
+                                self.monster_entities.append(s)
+                        
         return chunk_data
 
     def draw_block(self,block,structure=False,collider=True):
@@ -709,53 +726,54 @@ class World:
             self.can_press = True
 
     def update(self,dt):
-        mouse = pygame.mouse.get_pressed()
-        self.render_drops(dt)
+        if self.can:
+            mouse = pygame.mouse.get_pressed()
+            self.render_drops(dt)
 
-        # player
+            # player
 
-        if not self.is_dead:
-            self.input()
-            if not self.is_paused:
-                self.day_night_cycle_bg.update_day_night(dt)
-                self.furnaces_manager.passive_update()
-                if not self.player.inventory_open:
-                    self.mining_system.update(mouse)
-                    self.build_system.update(mouse)
-                    self.combat_system.update(mouse)
+            if not self.is_dead:
+                self.input()
+                if not self.is_paused:
+                    self.day_night_cycle_bg.update_day_night(dt)
+                    self.furnaces_manager.passive_update()
+                    if not self.player.inventory_open:
+                        self.mining_system.update(mouse)
+                        self.build_system.update(mouse)
+                        self.combat_system.update(mouse)
+                    else:
+                        if self.crafting_open:
+                            self.crafting_system.update(mouse)
+                            self.crafting_system.draw()
+                        elif self.furnace_open:
+                            self.furnaces_manager.active_update(mouse)
+                            self.furnaces_manager.draw()
+                        elif self.storage_open:
+                            self.storages_manager.render_slots()
+                            self.storages_manager.update(mouse)
                 else:
-                    if self.crafting_open:
-                        self.crafting_system.update(mouse)
-                        self.crafting_system.draw()
-                    elif self.furnace_open:
-                        self.furnaces_manager.active_update(mouse)
-                        self.furnaces_manager.draw()
-                    elif self.storage_open:
-                        self.storages_manager.render_slots()
-                        self.storages_manager.update(mouse)
-            else:
-                self.last_milli = pygame.time.get_ticks()
+                    self.last_milli = pygame.time.get_ticks()
 
-        self.player.update(self.rect_colliders,dt,mouse)
+            self.player.update(self.rect_colliders,dt,mouse)
 
-        # refresh
-        self.rect_colliders.clear()
-        self.chunk_colliders.clear()
-        self.free_pos_rects.clear()
-        self.before_loaded_chunks = self.currently_loaded_chunks.copy()
-        self.currently_loaded_chunks.clear()
+            # refresh
+            self.rect_colliders.clear()
+            self.chunk_colliders.clear()
+            self.free_pos_rects.clear()
+            self.before_loaded_chunks = self.currently_loaded_chunks.copy()
+            self.currently_loaded_chunks.clear()
 
-        if self.is_dead:
-            self.death_actions()
-        elif self.is_paused:
-            self.pause_actions()
+            if self.is_dead:
+                self.death_actions()
+            elif self.is_paused:
+                self.pause_actions()
 
-        if pygame.time.get_ticks()-self.last_time >= 1000 and self.is_paused==False and self.is_dead == False:
-            self.last_time=pygame.time.get_ticks()
-            self.seconds+=1
+            if pygame.time.get_ticks()-self.last_time >= 1000 and self.is_paused==False and self.is_dead == False:
+                self.last_time=pygame.time.get_ticks()
+                self.seconds+=1
 
-        self.cursor.draw(pygame.mouse.get_pos())
-        self.check_underground()
+            self.cursor.draw(pygame.mouse.get_pos())
+            self.check_underground()
 
     def check_underground(self):
 

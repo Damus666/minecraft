@@ -22,7 +22,7 @@ class Game:
         str = string.ascii_lowercase+string.ascii_uppercase+string.digits+"_"
         id = "".join(choice(str)for i in range(lenght))
         return id
-
+ 
     def delete_folder(self,name):
         if os.path.exists(W_DATA_F+name):
             file_list = os.listdir(W_DATA_F+name)

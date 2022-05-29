@@ -115,7 +115,7 @@ class Player():
         #try:
             p_file = open("data/worlds_data/"+id+"/player_data.json","r")
             data = json.load(p_file)
-            self.rect.center = data["pos"]
+            self.rect.center = (data["pos"][0],data["pos"][1]-50)
             self.gravity = data["gravity"]
             self.pixel_fell = data["pixel_fell"]
             self.statistics.player_health = data["health"]

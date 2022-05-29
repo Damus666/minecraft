@@ -1,0 +1,48 @@
+use locals <all>;
+
+module DamusTest (locals<all>)
+{
+    init ()
+    {
+        global obj apple = new apple("good",10.0,"green");
+        apple.eat(4.56);
+        apple.move(200,300);
+    }
+
+    all
+}
+
+global class (obj) apple
+{
+    init (str type,float mass, str color)
+    {
+        child type,mass,color = args;
+        child tuple(int,int) position = (10,10)
+    }
+
+    child tuple(str,tuple) fun () get_data
+    {
+        return (parent.type,parent.position);
+    }
+
+    child void fun (int x, int y) move
+    {
+        parent.position += (x,y);
+    }
+
+    child bool fun (float amount) eat
+    {
+        #eat apple#
+        if (amount > 0)
+        {
+            parent.mass -= amount;
+            if (parent.mass <= 0)
+            {
+                delete parent;
+                return True;
+            } else {return False}
+        } else {
+            throw error("cannot eat negative mass");
+        }
+    }
+}
